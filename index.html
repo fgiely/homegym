@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Home Gym</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --surface3: #262626;
+    --border: #2a2a2a;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #f0f0f0;
+    --muted: #6a6a6a;
+    --traction: #4ecdc4;
+    --sol: #ff6b6b;
+    --elastique: #a78bfa;
+    --warm: #fbbf24;
+    --stretch: #38bdf8;
+    --green: #4ade80;
+    --red: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { overscroll-behavior: none; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding-bottom: 84px;
+  }
+  ::-webkit-scrollbar { width: 0; }
+
+  /* ============ TOPBAR ============ */
+  .topbar {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: rgba(15,15,15,0.94);
+    backdrop-filter: blur(12px);
+    z-index: 50;
+  }
+  .topbar-row { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.04em; }
+  .logo span { color: var(--accent); }
+  .streak {
+    display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border); padding: 5px 11px; border-radius: 20px;
+  }
+  .streak strong { color: var(--accent2); font-weight: 700; }
+
+  /* ============ SCREENS ============ */
+  .screen { display: none; padding: 20px; animation: fade .25s ease; }
+  .screen.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 19px; letter-spacing: .06em;
+    margin: 26px 0 12px; color: var(--muted);
+  }
+
+  /* ============ DASHBOARD ============ */
+  .next-card {
+    background: linear-gradient(135deg, var(--surface2), var(--surface));
+    border: 1px solid var(--border); border-radius: 18px; padding: 24px;
+    position: relative; overflow: hidden; margin-bottom: 4px;
+  }
+  .next-card::before {
+    content: ''; position: absolute; top: -40%; right: -10%; width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(232,255,71,.13), transparent 70%);
+  }
+  .next-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .next-title { font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: .92; }
+  .next-sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .next-sub b { color: var(--text); font-weight: 600; }
+  .next-phases { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+  .phase-chip {
+    font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 6px; display: flex; align-items: center; gap: 5px;
+  }
+  .phase-chip .pd { width: 7px; height: 7px; border-radius: 50%; }
+  .chip-warm { background: rgba(251,191,36,.12); color: var(--warm); }
+  .chip-main { background: rgba(232,255,71,.12); color: var(--accent); }
+  .chip-stretch { background: rgba(56,189,248,.12); color: var(--stretch); }
+
+  .btn-primary {
+    width: 100%; background: var(--accent); color: #000; border: none; border-radius: 12px;
+    padding: 17px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700;
+    letter-spacing: .03em; cursor: pointer; transition: transform .15s, filter .15s;
+  }
+  .btn-primary:active { transform: scale(.98); filter: brightness(1.1); }
+  .btn-primary:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
+  .btn-ghost {
+    width: 100%; background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    border-radius: 12px; padding: 15px; font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-ghost:active { transform: scale(.98); }
+
+  .resume-banner {
+    background: rgba(232,255,71,.08); border: 1px solid rgba(232,255,71,.3);
+    border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 14px;
+  }
+  .resume-banner .ri { font-size: 26px; }
+  .resume-banner .rt { flex: 1; }
+  .resume-banner .rtt { font-weight: 600; font-size: 14px; }
+  .resume-banner .rts { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .resume-banner button {
+    background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 9px 16px;
+    font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+
+  .session-pick { display: flex; gap: 10px; }
+  .pick-btn {
+    flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 8px; text-align: center; cursor: pointer; transition: all .15s;
+  }
+  .pick-btn:active { transform: scale(.97); }
+  .pick-btn .pl { font-family: 'Bebas Neue', sans-serif; font-size: 34px; line-height: 1; }
+  .pick-btn.a .pl { color: var(--sol); }
+  .pick-btn.b .pl { color: var(--traction); }
+  .pick-btn.c .pl { color: var(--elastique); }
+  .pick-btn .ps { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .stat-row { display: flex; gap: 10px; }
+  .stat-box { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center; }
+  .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 34px; line-height: 1; color: var(--accent); }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
+
+  /* ============ PREVIEW (aperçu séance) ============ */
+  .preview-list { margin-top: 4px; }
+  .pv-phase-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    margin: 18px 0 8px; display: flex; align-items: center; gap: 7px;
+  }
+  .pv-phase-label .pd { width: 8px; height: 8px; border-radius: 50%; }
+  .pv-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 7px; display: flex; align-items: center; gap: 12px;
+  }
+  .pv-item .pvn { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--muted); width: 20px; }
+  .pv-item .pvb { flex: 1; }
+  .pv-item .pvt { font-weight: 600; font-size: 14px; }
+  .pv-item .pvtg { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .pv-item .pvr { font-size: 12px; color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+  /* ============ GUIDED SESSION ============ */
+  #screen-session { padding: 0; display: none; }
+  #screen-session.active { display: block; }
+  .sess-wrap { min-height: 100vh; display: flex; flex-direction: column; padding-bottom: 20px; }
+
+  .sess-top {
+    padding: 16px 20px; display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0;
+    background: rgba(15,15,15,.94); backdrop-filter: blur(12px); z-index: 20;
+  }
+  .sess-close {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    width: 38px; height: 38px; border-radius: 10px; font-size: 17px; cursor: pointer; flex-shrink: 0;
+  }
+  .sess-top-info { flex: 1; min-width: 0; }
+  .sess-top-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sess-top-phase { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 1px; }
+  .sess-step-count { font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--muted); white-space: nowrap; }
+
+  .sess-progress { height: 3px; background: var(--border); display: flex; }
+  .sess-progress .seg { flex: 1; transition: background .3s; }
+  .sess-progress .seg.done { background: var(--accent); }
+  .sess-progress .seg.current { background: var(--accent); opacity: .5; }
+
+  .sess-body { flex: 1; padding: 24px 20px; display: flex; flex-direction: column; }
+
+  .phase-tag {
+    align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 20px; margin-bottom: 18px;
+  }
+  .phase-tag.warm { background: rgba(251,191,36,.15); color: var(--warm); }
+  .phase-tag.main { background: rgba(232,255,71,.15); color: var(--accent); }
+  .phase-tag.stretch { background: rgba(56,189,248,.15); color: var(--stretch); }
+
+  .exercise-name { font-family: 'Bebas Neue', sans-serif; font-size: 40px; line-height: .98; letter-spacing: .02em; }
+  .exercise-target {
+    font-size: 17px; color: var(--text); margin-top: 12px; font-weight: 500;
+  }
+  .exercise-target b { color: var(--accent); }
+  .exercise-target .resist { color: var(--elastique); }
+  .exercise-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .ex-tag {
+    font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    padding: 3px 8px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 5px;
+  }
+  .exercise-note {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin-top: 20px; font-size: 13px; color: #b8b8b8; line-height: 1.65;
+  }
+  .exercise-note .nl { color: var(--accent); font-weight: 600; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; display: block; margin-bottom: 5px; }
+
+  /* difficulty inline feedback */
+  .diff-row { display: flex; gap: 8px; margin-top: 20px; }
+  .diff-btn {
+    flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 10px; padding: 11px 6px; font-family: inherit; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all .15s; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .diff-btn .di { font-size: 17px; }
+  .diff-btn:active { transform: scale(.95); }
+  .diff-btn.sel[data-d="hard"] { border-color: var(--red); background: rgba(248,113,113,.12); color: var(--red); }
+  .diff-btn.sel[data-d="easy"] { border-color: var(--accent); background: rgba(232,255,71,.12); color: var(--accent); }
+  .diff-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 8px; min-height: 14px; }
+
+  .sess-actions { padding: 16px 20px 0; }
+  .sess-actions .btn-primary { font-size: 16px; padding: 18px; }
+
+  /* big circular timer for rest + timed exercises */
+  .timer-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 10px 0; }
+  .ring-wrap { position: relative; width: 250px; height: 250px; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-track { fill: none; stroke: var(--border); stroke-width: 7; }
+  .ring-prog { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset .95s linear; }
+  .ring-prog.rest { stroke: var(--traction); }
+  .ring-prog.timed { stroke: var(--accent2); }
+  .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-time { font-family: 'Bebas Neue', sans-serif; font-size: 78px; line-height: 1; }
+  .ring-caption { font-size: 13px; color: var(--muted); margin-top: 2px; text-align: center; padding: 0 20px; }
+  .ring-next { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .ring-next b { color: var(--text); }
+
+  .timer-adjust { display: flex; gap: 10px; margin-top: 26px; }
+  .ta-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 11px; padding: 13px 18px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s;
+  }
+  .ta-btn:active { transform: scale(.95); }
+  .ta-btn.pause { min-width: 120px; }
+
+  /* ============ FINISH SCREEN ============ */
+  .finish-hero { text-align: center; padding: 20px 0 10px; }
+  .finish-emoji { font-size: 54px; }
+  .finish-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; margin-top: 8px; }
+  .finish-sub { color: var(--muted); font-size: 14px; }
+  .finish-stats { display: flex; gap: 10px; margin: 20px 0; }
+  .fs-box { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; }
+  .fs-num { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent); line-height: 1; }
+  .fs-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: .04em; }
+  .fs-num.small { font-size: 20px; }
+
+  .feel-label { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .feel-row { display: flex; gap: 8px; margin-bottom: 18px; }
+  .feel-btn {
+    flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 11px; padding: 13px 6px; font-family: inherit; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all .15s; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  }
+  .feel-btn .fi { font-size: 20px; }
+  .feel-btn:active { transform: scale(.95); }
+  .feel-btn.sel { border-color: var(--accent); background: rgba(232,255,71,.1); color: var(--accent); }
+
+  .comment-box {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; color: var(--text); font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px; margin-bottom: 16px;
+  }
+  .comment-box:focus { outline: none; border-color: var(--accent); }
+  .comment-box::placeholder { color: var(--muted); }
+
+  /* per-exercise feedback recap on finish */
+  .fb-recap { margin-bottom: 18px; }
+  .fb-recap-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .fb-recap-item:last-child { border: none; }
+  .fb-recap-name { flex: 1; color: #c8c8c8; }
+  .fb-pill { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .fb-pill.hard { background: rgba(248,113,113,.15); color: var(--red); }
+  .fb-pill.easy { background: rgba(232,255,71,.15); color: var(--accent); }
+
+  /* ============ HISTORY ============ */
+  .hist-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: border-color .15s;
+  }
+  .hist-item:active { border-color: var(--accent); }
+  .hist-badge {
+    font-family: 'Bebas Neue', sans-serif; font-size: 26px; width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; background: var(--surface2); flex-shrink: 0;
+  }
+  .hist-badge.a { color: var(--sol); } .hist-badge.b { color: var(--traction); } .hist-badge.c { color: var(--elastique); }
+  .hist-info { flex: 1; min-width: 0; }
+  .hist-name { font-weight: 600; font-size: 14px; }
+  .hist-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .hist-feel { font-size: 18px; }
+
+  .empty { text-align: center; color: var(--muted); padding: 50px 20px; font-size: 14px; line-height: 1.6; }
+  .empty .ei { font-size: 42px; margin-bottom: 12px; opacity: .5; }
+
+  /* ============ PROGRESS / ADJUST INFO ============ */
+  .adj-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+  .adj-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .adj-title { font-weight: 600; font-size: 14px; }
+  .adj-level { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: var(--surface2); color: var(--accent); }
+  .adj-bar { height: 6px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
+  .adj-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .4s; }
+  .adj-meta { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  .deload-alert {
+    background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.3); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 14px; font-size: 13px; line-height: 1.6; display: flex; gap: 10px;
+  }
+  .deload-alert .da { flex-shrink: 0; font-size: 18px; }
+  .deload-alert b { color: var(--red); }
+
+  /* ============ EXPORT MODAL ============ */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 300; background: rgba(8,8,8,.85); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 20px; animation: fade .2s;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 22px;
+    width: 100%; max-width: 460px; max-height: 85vh; overflow-y: auto;
+  }
+  .modal h3 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .04em; }
+  .modal p { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 8px 0 14px; }
+  .export-text {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; color: #c8c8c8; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.5;
+    min-height: 200px; resize: vertical; white-space: pre; overflow-x: auto;
+  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 14px; }
+
+  /* ============ NAV ============ */
+  .navbar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15,15,15,.96); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border); display: flex; z-index: 50;
+  }
+  .nav-item { flex: 1; padding: 11px 0 15px; text-align: center; cursor: pointer; color: var(--muted); transition: color .15s; }
+  .nav-item.active { color: var(--accent); }
+  .nav-ico { font-size: 19px; }
+  .nav-lbl { font-size: 10px; margin-top: 2px; font-weight: 600; letter-spacing: .03em; }
+  .navbar.hidden { display: none; }
+
+  /* ============ TOAST ============ */
+  .toast {
+    position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--accent); color: #000; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    z-index: 400; opacity: 0; pointer-events: none; transition: all .3s; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .reset-link { text-align: center; margin-top: 28px; }
+  .reset-link button { background: none; border: none; color: var(--muted); font-size: 12px; text-decoration: underline; cursor: pointer; font-family: inherit; }
+
+  .storage-warn {
+    background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 10px;
+    padding: 12px 14px; font-size: 12px; line-height: 1.5; margin-bottom: 16px; color: #d4c08a; display: none;
+  }
+  .storage-warn.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar">
+  <div class="topbar-row">
+    <div class="logo">HOME<span>GYM</span></div>
+    <div class="streak">🔥 <strong id="streakNum">0</strong></div>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="screen-home" class="screen active">
+  <div class="storage-warn" id="storageWarn">⚠️ Stockage local indisponible — l'historique ne sera pas conservé après fermeture. Ouvre le fichier téléchargé dans ton navigateur (pas en aperçu) pour une sauvegarde fiable.</div>
+
+  <div id="resumeSlot"></div>
+
+  <div class="next-card">
+    <div class="next-label">Prochaine séance suggérée</div>
+    <div class="next-title" id="nextTitle">Séance A</div>
+    <div class="next-sub" id="nextSub"></div>
+    <div class="next-phases">
+      <span class="phase-chip chip-warm"><span class="pd" style="background:var(--warm)"></span>Échauffement</span>
+      <span class="phase-chip chip-main"><span class="pd" style="background:var(--accent)"></span>Renfo</span>
+      <span class="phase-chip chip-stretch"><span class="pd" style="background:var(--stretch)"></span>Étirements</span>
+    </div>
+  </div>
+  <div style="margin-top:14px;"><button class="btn-primary" onclick="openPreview(suggestedSession())">Voir la séance →</button></div>
+
+  <div class="section-title">Ou choisis</div>
+  <div class="session-pick">
+    <div class="pick-btn a" onclick="openPreview('A')"><div class="pl">A</div><div class="ps">Push + Core</div></div>
+    <div class="pick-btn b" onclick="openPreview('B')"><div class="pl">B</div><div class="ps">Pull + Biceps</div></div>
+    <div class="pick-btn c" onclick="openPreview('C')"><div class="pl">C</div><div class="ps">Legs + Core</div></div>
+  </div>
+
+  <div class="section-title">Cette semaine</div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num" id="statWeek">0</div><div class="stat-lbl">Séances</div></div>
+    <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Total</div></div>
+    <div class="stat-box"><div class="stat-num" id="statLevel">1</div><div class="stat-lbl">Niveau moy.</div></div>
+  </div>
+
+  <div class="reset-link"><button onclick="resetAll()">Réinitialiser toutes les données</button></div>
+</div>
+
+<!-- ============ PREVIEW ============ -->
+<div id="screen-preview" class="screen">
+  <div class="workout-header" style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+    <button class="sess-close" onclick="nav('home')">←</button>
+    <div>
+      <div style="font-family:'Bebas Neue';font-size:26px;letter-spacing:.04em;" id="pvTitle">Séance A</div>
+      <div style="font-size:12px;color:var(--muted);" id="pvMeta"></div>
+    </div>
+  </div>
+  <div class="preview-list" id="pvList"></div>
+  <div style="margin-top:20px;"><button class="btn-primary" onclick="launchSession()">Démarrer la séance guidée →</button></div>
+</div>
+
+<!-- ============ GUIDED SESSION ============ -->
+<div id="screen-session" class="screen">
+  <div class="sess-wrap">
+    <div class="sess-top">
+      <button class="sess-close" onclick="confirmQuitSession()">✕</button>
+      <div class="sess-top-info">
+        <div class="sess-top-title" id="sessTitle">Séance A</div>
+        <div class="sess-top-phase" id="sessPhase">Échauffement</div>
+      </div>
+      <div class="sess-step-count" id="sessStepCount">1 / 14</div>
+    </div>
+    <div class="sess-progress" id="sessProgress"></div>
+    <div id="sessContent"></div>
+  </div>
+</div>
+
+<!-- ============ HISTORY ============ -->
+<div id="screen-history" class="screen">
+  <div class="section-title" style="margin-top:4px;">Historique</div>
+  <div id="histList"></div>
+</div>
+
+<!-- ============ PROGRESS ============ -->
+<div id="screen-progress" class="screen">
+  <div class="section-title" style="margin-top:4px;">Ma progression</div>
+  <div id="deloadSlot"></div>
+  <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Le niveau de chaque séance s'ajuste selon tes retours. Plus tu trouves une séance facile, plus elle monte en reps et résistance.</p>
+  <div id="adjList"></div>
+  <div class="section-title">Recalibrage par Claude</div>
+  <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;">Génère un bilan de tes séances et colle-le dans une conversation avec Claude pour une révision en profondeur du programme.</p>
+  <button class="btn-ghost" onclick="openExport()">📋 Générer le bilan à coller</button>
+
+  <div class="section-title">Sauvegarde des données</div>
+  <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;">Sur certains navigateurs (fichier ouvert en local), l'historique peut se vider à la fermeture. Exporte un fichier de sauvegarde et réimporte-le pour tout récupérer. Marche partout.</p>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <button class="btn-primary" onclick="exportBackup()">💾 Exporter mes données (fichier)</button>
+    <button class="btn-ghost" onclick="document.getElementById('importFile').click()">📂 Importer une sauvegarde</button>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importBackup(event)">
+  </div>
+  <div id="backupInfo" style="font-size:12px;color:var(--muted);margin-top:10px;"></div>
+</div>
+
+<!-- ============ NAV ============ -->
+<div class="navbar" id="navbar">
+  <div class="nav-item active" id="nav-home" onclick="nav('home')"><div class="nav-ico">🏠</div><div class="nav-lbl">Accueil</div></div>
+  <div class="nav-item" id="nav-history" onclick="nav('history')"><div class="nav-ico">📊</div><div class="nav-lbl">Historique</div></div>
+  <div class="nav-item" id="nav-progress" onclick="nav('progress')"><div class="nav-ico">📈</div><div class="nav-lbl">Progrès</div></div>
+</div>
+
+<!-- ============ EXPORT MODAL ============ -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h3>Bilan pour Claude</h3>
+    <p>Copie ce texte et colle-le dans une conversation avec Claude en lui demandant d'ajuster ton programme.</p>
+    <textarea class="export-text" id="exportText" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="copyExport()">Copier</button>
+      <button class="btn-ghost" onclick="closeExport()" style="flex:0 0 auto;width:auto;padding-left:20px;padding-right:20px;">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   MODÈLE DE DONNÉES — Programme
+   Chaque exercice : kind 'reps' | 'timed' | 'hold-each' (durée par côté)
+   baseResist optionnel (paliers 10/20/30/40)
+   ===================================================================== */
+
+const WARMUPS = {
+  A: [
+    { id:"wA1", name:"Cercles de bras", kind:"timed", dur:30, tags:["Épaules"], note:"Grands cercles vers l'avant puis l'arrière, amplitude maximale." },
+    { id:"wA2", name:"Rotations du buste", kind:"timed", dur:30, tags:["Tronc"], note:"Mains sur les hanches, rotation lente du buste de gauche à droite." },
+    { id:"wA3", name:"Pompes lentes (échauffement)", kind:"reps", reps:5, sets:1, tags:["Poitrine"], note:"5 pompes très lentes pour préparer les épaules et les pectoraux. Sur les genoux si besoin." },
+    { id:"wA4", name:"Étirement dynamique pectoraux", kind:"timed", dur:30, tags:["Poitrine"], note:"Bras écartés, ouvre et ferme la poitrine en balançant les bras." }
+  ],
+  B: [
+    { id:"wB1", name:"Cercles de bras", kind:"timed", dur:30, tags:["Épaules"], note:"Grands cercles avant puis arrière pour réveiller les épaules." },
+    { id:"wB2", name:"Décontraction des suspensions", kind:"timed", dur:30, tags:["Dos"], note:"Suspends-toi à la barre, bras tendus, relâche les épaules 30s pour étirer le dos." },
+    { id:"wB3", name:"Tirage élastique léger", kind:"reps", reps:12, sets:1, baseResist:10, tags:["Dos"], note:"Rowing léger à l'élastique 10 kg pour activer le dos avant les tractions." },
+    { id:"wB4", name:"Rotations des poignets", kind:"timed", dur:20, tags:["Poignets"], note:"Rotations dans les deux sens pour préparer la prise." }
+  ],
+  C: [
+    { id:"wC1", name:"Montées de genoux", kind:"timed", dur:30, tags:["Cardio"], note:"Sur place, monte les genoux à hauteur de hanche en rythme." },
+    { id:"wC2", name:"Squats lents (échauffement)", kind:"reps", reps:10, sets:1, tags:["Quadriceps"], note:"10 squats au poids du corps, lents, pour ouvrir les hanches et genoux." },
+    { id:"wC3", name:"Fentes alternées légères", kind:"reps", reps:8, sets:1, tags:["Jambes"], note:"8 fentes douces en alternance pour activer fessiers et quadriceps." },
+    { id:"wC4", name:"Cercles de hanches", kind:"timed", dur:30, tags:["Hanches"], note:"Mains sur les hanches, larges cercles dans les deux sens." }
+  ]
+};
+
+const PROGRAM = {
+  A: {
+    name:"Séance A", subtitle:"Push + Core",
+    main:[
+      { id:"a1", name:"Pompes classiques", kind:"reps", baseReps:8, sets:3, tags:["Poitrine","Triceps"], note:"Mains un peu plus larges que les épaules, corps gainé.|Trop facile : pieds surélevés. Trop dur : genoux au sol." },
+      { id:"a2", name:"Développé épaules assis (élastique)", kind:"reps", baseReps:12, sets:3, baseResist:20, tags:["Épaules"], note:"Assis au sol, élastique passé sous les fesses, pousse les poings vers le haut.|Alternative sans élastique : pike push-ups (fesses hautes, tête vers le sol)." },
+      { id:"a3", name:"Pompes serrées (triceps)", kind:"reps", baseReps:8, sets:3, tags:["Triceps"], note:"Mains rapprochées sous la poitrine, coudes le long du corps à la descente." },
+      { id:"a4", name:"Élévations latérales (élastique)", kind:"reps", baseReps:15, sets:3, baseResist:10, tags:["Épaules lat."], note:"Pied sur l'élastique, monte les bras sur les côtés jusqu'à l'horizontale, coudes légèrement fléchis." },
+      { id:"a5", name:"Gainage planche", kind:"timed", dur:30, sets:3, tags:["Core"], note:"Avant-bras au sol (coudes sous les épaules), pointes de pieds, corps en une seule ligne droite des talons à la tête.|Position finale : serre les abdos et les fessiers, ne laisse pas le bassin s'affaisser ni se cambrer. Pousse activement le sol avec les avant-bras, regard vers le sol. Si le bas du dos creuse, rentre légèrement le bassin.|Le chrono tourne pendant la tenue." },
+      { id:"a6", name:"Crunchs", kind:"reps", baseReps:15, sets:3, tags:["Abdos"], note:"Mains sur les tempes, décolle les omoplates en soufflant. Mouvement contrôlé." }
+    ]
+  },
+  B: {
+    name:"Séance B", subtitle:"Pull + Biceps",
+    main:[
+      { id:"b1", name:"Tractions pronation", kind:"reps", baseReps:5, sets:4, tags:["Grand dorsal","Biceps"], note:"Paumes vers l'avant. Monte la poitrine vers la barre, descente lente.|Moins de 3 reps propres ? Mets un élastique 20-30 kg en assistance sous les pieds." },
+      { id:"b2", name:"Rowing élastique debout", kind:"reps", baseReps:12, sets:3, baseResist:30, tags:["Dos moyen","Trapèzes"], note:"Élastique fixé bas, tire les coudes vers l'arrière en serrant les omoplates. Dos droit." },
+      { id:"b3", name:"Tractions supination (chin-up)", kind:"reps", baseReps:5, sets:3, tags:["Biceps","Dorsal"], note:"Paumes vers toi, mains largeur d'épaules. Plus facile que la pronation, accent biceps." },
+      { id:"b4", name:"Curl biceps (élastique)", kind:"reps", baseReps:15, sets:3, baseResist:20, tags:["Biceps"], note:"Pied au centre de l'élastique, coudes collés aux flancs, fléchis vers les épaules." },
+      { id:"b5", name:"Oiseau / rear delt (élastique)", kind:"reps", baseReps:15, sets:3, baseResist:10, tags:["Épaules arrière"], note:"Penché buste horizontal, élastique sous les pieds, écarte les bras. Essentiel pour la posture." },
+      { id:"b6", name:"Superman", kind:"timed", dur:30, sets:3, tags:["Bas du dos","Fessiers"], note:"À plat ventre, bras tendus devant toi, jambes tendues. Décolle simultanément bras, poitrine et jambes du sol.|Position finale : maintiens la tenue (le chrono tourne), serre les fessiers, allonge-toi au maximum comme si on te tirait par les mains et les pieds. Garde le regard vers le sol pour ne pas casser la nuque. Monte juste assez pour sentir le bas du dos travailler, sans forcer la cambrure.|Respire pendant la tenue." }
+    ]
+  },
+  C: {
+    name:"Séance C", subtitle:"Legs + Core",
+    main:[
+      { id:"c1", name:"Squats au poids du corps", kind:"reps", baseReps:15, sets:4, tags:["Quadriceps","Fessiers"], note:"Cuisses parallèles au sol, genoux dans l'axe des orteils, poids sur les talons.|Progression : élastique 20 kg autour des hanches." },
+      { id:"c2", name:"Squats bulgares (élastique)", kind:"hold-each", baseReps:10, sets:3, baseResist:20, tags:["Quadriceps","Fessiers"], note:"Pied arrière sur le canapé, élastique sous le pied avant. Genou avant ne dépasse pas les orteils.|10 reps par jambe." },
+      { id:"c3", name:"Hip thrust au sol", kind:"reps", baseReps:15, sets:4, baseResist:30, tags:["Fessiers","Ischio"], note:"Dos au sol, pieds à plat, pousse les hanches en serrant les fessiers. Élastique sur les hanches." },
+      { id:"c4", name:"Fentes marchées", kind:"hold-each", baseReps:10, sets:3, tags:["Quadriceps","Équilibre"], note:"Pas large, descends le genou arrière près du sol, buste droit.|10 reps par jambe." },
+      { id:"c5", name:"Mollets debout", kind:"reps", baseReps:20, sets:4, tags:["Mollets"], note:"Monte sur la pointe des pieds, tiens 1s en haut, descends lentement." },
+      { id:"c6", name:"Gainage latéral", kind:"hold-each-timed", dur:25, sets:3, tags:["Obliques"], note:"Sur le côté, en appui sur un avant-bras (coude sous l'épaule), jambes tendues empilées. Décolle le bassin pour former une ligne droite tête-bassin-pieds.|Position finale : maintiens (le chrono tourne par côté), bassin haut, ne le laisse pas redescendre. Le corps reste dans un plan, ne bascule pas vers l'avant. Pose la main libre sur la hanche ou tends-la vers le plafond.|Chrono par côté, le 2e côté s'enchaîne automatiquement." }
+    ]
+  }
+};
+
+const STRETCHES = {
+  A: [
+    { id:"sA1", name:"Étirement pectoraux (mur)", kind:"hold-each-timed", dur:20, tags:["Poitrine"], note:"Pose l'avant-bras à plat contre un cadre de porte, coude à hauteur d'épaule. Avance d'un pas et tourne lentement le buste à l'opposé.|Position finale : tu dois sentir l'étirement à l'avant de l'épaule et en travers du pectoral, sans douleur. Respire, ne force pas en à-coups.|20s par côté." },
+    { id:"sA2", name:"Étirement triceps", kind:"hold-each-timed", dur:20, tags:["Triceps"], note:"Lève un bras, plie le coude pour amener la main entre les omoplates. Avec l'autre main, attrape le coude et tire doucement vers la tête.|Position finale : étirement le long de l'arrière du bras. Garde le buste droit, ne penche pas la tête en avant.|20s par côté." },
+    { id:"sA3", name:"Étirement épaules croisées", kind:"hold-each-timed", dur:20, tags:["Épaules"], note:"Tends un bras à l'horizontale en travers de la poitrine. Avec l'avant-bras opposé, ramène-le contre toi au niveau du coude (pas de l'articulation).|Position finale : tension à l'arrière de l'épaule. Garde l'épaule basse, ne hausse pas vers l'oreille.|20s par côté." },
+    { id:"sA4", name:"Cobra (abdos + bas du dos)", kind:"timed", dur:30, tags:["Abdos"], note:"À plat ventre, mains à plat sous les épaules (pas devant). Pousse progressivement sur les bras pour décoller le buste et cambrer.|Position finale : bras à demi tendus (pas forcément complètement), bassin et cuisses restent au sol, épaules basses et loin des oreilles, regard devant. Pousse fermement mais sans bloquer les coudes — tu cherches une cambrure confortable, pas maximale. Si ça tire dans le bas du dos, redescends un peu.|Respire lentement pendant les 30s." }
+  ],
+  B: [
+    { id:"sB1", name:"Étirement grand dorsal", kind:"hold-each-timed", dur:20, tags:["Dos"], note:"Debout, lève un bras tendu vers le plafond, puis penche tout le buste sur le côté opposé en gardant le bras dans l'alignement.|Position finale : étirement sur tout le flanc, du bassin jusqu'à la main. Ne te penche pas en avant, reste dans le plan latéral.|20s par côté." },
+    { id:"sB2", name:"Étirement biceps (mur)", kind:"hold-each-timed", dur:20, tags:["Biceps"], note:"Pose la paume à plat contre un mur derrière toi, bras tendu à hauteur d'épaule, doigts vers l'arrière. Tourne doucement le corps à l'opposé du bras.|Position finale : tension à l'avant du bras et de l'épaule. Garde le coude tendu sans le verrouiller violemment.|20s par côté." },
+    { id:"sB3", name:"Étirement avant-bras", kind:"hold-each-timed", dur:15, tags:["Avant-bras"], note:"Bras tendu devant, paume vers le bas. Avec l'autre main, tire les doigts vers le sol (étire le dessus), puis paume vers le haut et tire les doigts vers toi (étire le dessous).|Position finale : étirement dans l'avant-bras, doux. C'est fragile, ne force jamais.|15s par sens." },
+    { id:"sB4", name:"Chat-vache", kind:"timed", dur:30, tags:["Dos"], note:"À quatre pattes, mains sous les épaules, genoux sous les hanches. Alterne lentement : dos rond en expirant (chat), puis dos creux en inspirant (vache).|Position finale : c'est un mouvement continu, pas une tenue. Va chercher l'amplitude maximale du dos dans les deux sens, en suivant ta respiration.|Enchaîne pendant 30s." }
+  ],
+  C: [
+    { id:"sC1", name:"Étirement quadriceps debout", kind:"hold-each-timed", dur:20, tags:["Quadriceps"], note:"Debout, attrape ta cheville derrière toi et ramène le talon vers la fesse. Garde les genoux serrés l'un contre l'autre.|Position finale : genou pointé vers le sol, bassin légèrement basculé en avant (rentre le ventre) pour intensifier. Tension sur le devant de la cuisse. Appuie-toi à un mur pour l'équilibre.|20s par jambe." },
+    { id:"sC2", name:"Étirement ischio-jambiers", kind:"hold-each-timed", dur:20, tags:["Ischio"], note:"Une jambe tendue devant, talon au sol, pointe vers le haut. L'autre jambe légèrement fléchie. Penche le buste vers le pied avant en gardant le dos droit.|Position finale : la flexion vient des hanches, pas du dos arrondi. Tension à l'arrière de la cuisse tendue. Inutile de toucher le pied, garde le dos plat.|20s par jambe." },
+    { id:"sC3", name:"Étirement fessiers (figure 4)", kind:"hold-each-timed", dur:20, tags:["Fessiers"], note:"Allongé sur le dos, pose la cheville d'une jambe sur le genou opposé (forme un 4). Attrape la cuisse du dessous et ramène-la vers la poitrine.|Position finale : tension dans la fesse de la jambe croisée. Garde la tête au sol et les épaules relâchées.|20s par côté." },
+    { id:"sC4", name:"Étirement mollets (mur)", kind:"hold-each-timed", dur:20, tags:["Mollets"], note:"Face à un mur, mains posées dessus. Une jambe tendue loin derrière, talon ancré au sol, l'autre fléchie devant. Pousse le talon arrière dans le sol.|Position finale : jambe arrière bien tendue, talon qui ne décolle pas, tension dans le mollet. Avance le bassin vers le mur pour intensifier.|20s par jambe." }
+  ]
+};
+
+/* =====================================================================
+   ÉTAT + PERSISTANCE (localStorage avec fallback mémoire)
+   ===================================================================== */
+
+const STORE_KEY = "homegym_v2";
+const SESSION_KEY = "homegym_v2_active"; // pour la reprise
+let storageOK = true;
+const memStore = {};
+
+function rawGet(k){ try { if(storageOK){ const v = localStorage.getItem(k); return v; } } catch(e){ storageOK=false; } return memStore[k]||null; }
+function rawSet(k,v){ memStore[k]=v; try { if(storageOK){ localStorage.setItem(k,v); } } catch(e){ storageOK=false; } }
+function rawDel(k){ delete memStore[k]; try { if(storageOK){ localStorage.removeItem(k); } } catch(e){} }
+
+// test réel d'écriture
+(function testStorage(){
+  try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); storageOK = true; }
+  catch(e){ storageOK = false; }
+})();
+
+let DB = {
+  history: [],            // séances terminées
+  adjustments: {A:0,B:0,C:0},  // niveau global de séance (fallback)
+  exAdjust: {}            // ajustement fin PAR exercice : { exId: level }
+};
+
+function loadDB(){
+  const raw = rawGet(STORE_KEY);
+  if(raw){ try {
+    const d = JSON.parse(raw);
+    DB.history = d.history||[];
+    DB.adjustments = Object.assign({A:0,B:0,C:0}, d.adjustments||{});
+    DB.exAdjust = d.exAdjust||{};
+  } catch(e){} }
+}
+function saveDB(){ rawSet(STORE_KEY, JSON.stringify(DB)); }
+
+/* =====================================================================
+   AJUSTEMENT — reps & résistance
+   exAdjust[exId] : entier. +1 = un cran plus dur, -1 plus facile.
+   ===================================================================== */
+
+const RESIST_LEVELS = [10,20,30,40];
+
+function exLevel(exId){ return DB.exAdjust[exId] || 0; }
+
+function computedReps(ex){
+  if(ex.kind==="timed" || ex.kind==="hold-each-timed"){
+    const lvl = exLevel(ex.id);
+    return Math.max(15, (ex.dur||30) + lvl*5);
+  }
+  const base = ex.baseReps ?? ex.reps ?? 10;
+  const lvl = exLevel(ex.id);
+  return Math.max(Math.max(3, Math.ceil(base*0.5)), base + lvl*2);
+}
+
+function computedResist(ex){
+  if(!ex.baseResist) return null;
+  const lvl = exLevel(ex.id);
+  let baseIdx = RESIST_LEVELS.indexOf(Math.round(ex.baseResist/10)*10);
+  if(baseIdx<0) baseIdx = 0;
+  let idx = baseIdx + Math.floor(lvl/2); // 1 palier tous les 2 crans
+  idx = Math.min(RESIST_LEVELS.length-1, Math.max(0, idx));
+  return RESIST_LEVELS[idx];
+}
+
+// applique le feedback d'un exercice -> ajuste son niveau
+function applyExFeedback(exId, signal){ // 'hard' | 'easy'
+  let lvl = exLevel(exId);
+  if(signal==="hard") lvl -= 1;
+  else if(signal==="easy") lvl += 1;
+  lvl = Math.max(-3, Math.min(6, lvl));
+  DB.exAdjust[exId] = lvl;
+}
+
+// niveau "moyen" d'une séance pour affichage
+function sessionLevel(sessKey){
+  const exos = PROGRAM[sessKey].main;
+  const sum = exos.reduce((a,e)=>a+exLevel(e.id),0);
+  return Math.max(1, Math.round(1 + sum/exos.length));
+}
+
+// detection deload : un exercice marqué 'hard' lors des 2 dernières séances qui le contiennent
+function deloadCandidates(){
+  const recent = DB.history.slice(-6); // fenêtre
+  const counts = {};
+  recent.forEach(h=>{
+    (h.exFeedback||[]).forEach(f=>{
+      if(f.signal==="hard"){ counts[f.exId]=(counts[f.exId]||0)+1; }
+      else { counts[f.exId]=0; } // reset si pas dur
+    });
+  });
+  const out = [];
+  Object.keys(counts).forEach(id=>{ if(counts[id]>=2) out.push(id); });
+  return out;
+}
+
+function exById(id){
+  for(const k of ["A","B","C"]){
+    const all = [...WARMUPS[k], ...PROGRAM[k].main, ...STRETCHES[k]];
+    const f = all.find(e=>e.id===id);
+    if(f) return f;
+  }
+  return null;
+}
+
+/* =====================================================================
+   CONSTRUCTION D'UNE SÉANCE (liste de "steps")
+   step types : 'exercise' | 'rest'
+   ===================================================================== */
+
+function buildSteps(sessKey){
+  const steps = [];
+  const warm = WARMUPS[sessKey];
+  const main = PROGRAM[sessKey].main;
+  const stretch = STRETCHES[sessKey];
+
+  // échauffement : exo + courte pause (20s) entre, pas de pause après le dernier
+  warm.forEach((ex,i)=>{
+    steps.push({type:"exercise", phase:"warm", ex});
+    if(i < warm.length-1) steps.push({type:"rest", phase:"warm", dur:20, nextName: warm[i+1].name});
+  });
+  // transition vers le corps de séance
+  steps.push({type:"rest", phase:"warm", dur:30, nextName: main[0].name, transition:"Début du renforcement"});
+
+  // corps : chaque exo, pause 90s entre (60s pour exos en durée), pause après le dernier -> étirements
+  main.forEach((ex,i)=>{
+    steps.push({type:"exercise", phase:"main", ex});
+    const restDur = (ex.kind==="timed"||ex.kind==="hold-each-timed") ? 60 : 90;
+    if(i < main.length-1) steps.push({type:"rest", phase:"main", dur:restDur, nextName: main[i+1].name});
+  });
+  steps.push({type:"rest", phase:"main", dur:30, nextName: stretch[0].name, transition:"Étirements"});
+
+  // étirements : exo + 10s entre
+  stretch.forEach((ex,i)=>{
+    steps.push({type:"exercise", phase:"stretch", ex});
+    if(i < stretch.length-1) steps.push({type:"rest", phase:"stretch", dur:10, nextName: stretch[i+1].name});
+  });
+
+  return steps;
+}
+
+/* =====================================================================
+   MOTEUR DE SÉANCE
+   ===================================================================== */
+
+let SES = null; // session active
+
+function suggestedSession(){
+  const order=["A","B","C"];
+  if(DB.history.length===0) return "A";
+  const last = DB.history[DB.history.length-1].session;
+  return order[(order.indexOf(last)+1)%3];
+}
+
+function newSession(sessKey){
+  return {
+    sessKey,
+    steps: buildSteps(sessKey),
+    idx: 0,
+    startTime: Date.now(),
+    exFeedback: [],     // {exId, signal}
+    doneExercises: 0,
+    totalReps: 0,
+    paused: false
+  };
+}
+
+function phaseName(p){ return p==="warm"?"Échauffement":p==="stretch"?"Étirements":"Renforcement"; }
+function phaseTagClass(p){ return p==="warm"?"warm":p==="stretch"?"stretch":"main"; }
+
+function countMainExercises(){ return PROGRAM[SES.sessKey].main.length; }
+
+function renderProgressBar(){
+  const bar = document.getElementById("sessProgress");
+  bar.innerHTML = "";
+  SES.steps.forEach((s,i)=>{
+    const seg = document.createElement("div");
+    seg.className = "seg" + (i<SES.idx?" done":(i===SES.idx?" current":""));
+    bar.appendChild(seg);
+  });
+}
+
+function currentStep(){ return SES.steps[SES.idx]; }
+
+function renderStep(){
+  if(!SES) return;
+  const step = currentStep();
+  if(!step){ goToFinish(); return; }
+
+  document.getElementById("sessTitle").textContent = PROGRAM[SES.sessKey].name + " — " + PROGRAM[SES.sessKey].subtitle;
+  document.getElementById("sessPhase").textContent = phaseName(step.phase);
+  document.getElementById("sessStepCount").textContent = (SES.idx+1) + " / " + SES.steps.length;
+  renderProgressBar();
+  saveActive();
+
+  if(step.type==="exercise") renderExercise(step);
+  else renderRest(step);
+}
+
+function fmtTarget(ex){
+  const reps = computedReps(ex);
+  const resist = computedResist(ex);
+  let main;
+  if(ex.kind==="timed"){
+    main = `<b>${ex.sets?ex.sets+" × ":""}${reps}s</b>`;
+  } else if(ex.kind==="hold-each-timed"){
+    main = `<b>${ex.sets?ex.sets+" × ":""}${reps}s</b> par côté`;
+  } else if(ex.kind==="hold-each"){
+    main = `<b>${ex.sets?ex.sets+" × ":""}${reps}</b> par jambe`;
+  } else {
+    main = `<b>${ex.sets?ex.sets+" × ":""}${reps}</b> reps`;
+  }
+  if(resist) main += ` · <span class="resist">${resist} kg</span>`;
+  return main;
+}
+
+function renderExercise(step){
+  const ex = step.ex;
+  const isTimed = (ex.kind==="timed" || ex.kind==="hold-each-timed");
+  const noteParts = (ex.note||"").split("|");
+  const noteHtml = noteParts.map(p=>`<div>${p}</div>`).join("");
+  const tagClass = phaseTagClass(step.phase);
+  const showDiff = (step.phase==="main"); // feedback seulement sur le corps de séance
+  const curSignal = SES.exFeedback.find(f=>f.exId===ex.id)?.signal;
+
+  const c = document.getElementById("sessContent");
+
+  if(isTimed){
+    // exercice chronométré : grand timer
+    const reps = computedReps(ex);
+    const perSide = (ex.kind==="hold-each-timed");
+    c.innerHTML = `
+      <div class="sess-body">
+        <div class="phase-tag ${tagClass}">${phaseName(step.phase)}</div>
+        <div class="exercise-name">${ex.name}</div>
+        <div class="exercise-target">${fmtTarget(ex)}</div>
+        <div class="exercise-tags">${(ex.tags||[]).map(t=>`<span class="ex-tag">${t}</span>`).join("")}</div>
+        <div class="timer-stage">
+          <div class="ring-wrap">
+            <svg width="250" height="250" viewBox="0 0 250 250">
+              <circle class="ring-track" cx="125" cy="125" r="115"></circle>
+              <circle class="ring-prog timed" id="ringProg" cx="125" cy="125" r="115"></circle>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-time" id="ringTime">${reps}</div>
+              <div class="ring-caption" id="ringCaption">Mets-toi en position</div>
+            </div>
+          </div>
+          <div class="timer-adjust">
+            <button class="ta-btn" onclick="timerAdd(10)">+10s</button>
+            <button class="ta-btn pause" id="ringPause" onclick="timerToggle()">⏸ Pause</button>
+          </div>
+        </div>
+        ${showDiff?diffBlock(curSignal):""}
+        <div class="exercise-note"><span class="nl">Technique</span>${noteHtml}</div>
+      </div>
+      <div class="sess-actions">
+        <button class="btn-primary" id="exDoneBtn" onclick="exerciseDone()">${perSide?"Démarrer (côté 1)":"Lancer le chrono ▶"}</button>
+      </div>`;
+    // pour les exos chronométrés on prépare un timer "à la demande" (l'utilisateur lance)
+    setupTimedExercise(ex, perSide);
+  } else {
+    // exercice en reps : validation manuelle
+    const reps = computedReps(ex);
+    c.innerHTML = `
+      <div class="sess-body">
+        <div class="phase-tag ${tagClass}">${phaseName(step.phase)}</div>
+        <div class="exercise-name">${ex.name}</div>
+        <div class="exercise-target">${fmtTarget(ex)}</div>
+        <div class="exercise-tags">${(ex.tags||[]).map(t=>`<span class="ex-tag">${t}</span>`).join("")}</div>
+        <div class="exercise-note"><span class="nl">Technique</span>${noteHtml}</div>
+        ${showDiff?diffBlock(curSignal):""}
+      </div>
+      <div class="sess-actions">
+        <button class="btn-primary" onclick="exerciseDone()">Fait ✓</button>
+      </div>`;
+  }
+}
+
+function diffBlock(curSignal){
+  return `
+    <div class="diff-row">
+      <button class="diff-btn ${curSignal==="hard"?"sel":""}" data-d="hard" onclick="markDiff('hard', this)"><span class="di">😤</span>Trop dur</button>
+      <button class="diff-btn ${curSignal==="easy"?"sel":""}" data-d="easy" onclick="markDiff('easy', this)"><span class="di">😎</span>Trop facile</button>
+    </div>
+    <div class="diff-hint" id="diffHint"></div>`;
+}
+
+function markDiff(signal, btn){
+  const ex = currentStep().ex;
+  // toggle : reclic sur le même = annuler
+  const existing = SES.exFeedback.find(f=>f.exId===ex.id);
+  if(existing && existing.signal===signal){
+    SES.exFeedback = SES.exFeedback.filter(f=>f.exId!==ex.id);
+    document.querySelectorAll(".diff-btn").forEach(b=>b.classList.remove("sel"));
+    document.getElementById("diffHint").textContent = "";
+  } else {
+    SES.exFeedback = SES.exFeedback.filter(f=>f.exId!==ex.id);
+    SES.exFeedback.push({exId:ex.id, signal});
+    document.querySelectorAll(".diff-btn").forEach(b=>b.classList.remove("sel"));
+    btn.classList.add("sel");
+    document.getElementById("diffHint").textContent =
+      signal==="hard" ? "Noté — cet exercice sera allégé la prochaine fois." : "Noté — cet exercice montera d'un cran.";
+  }
+  saveActive();
+}
+
+function advance(){
+  SES.idx++;
+  if(SES.idx >= SES.steps.length){ goToFinish(); return; }
+  renderStep();
+  window.scrollTo(0,0);
+}
+
+/* ---------- REST step (auto countdown) ---------- */
+
+let timer = { id:null, remaining:0, total:0, running:false, mode:"rest", onDone:null, phase:"side1", ex:null, endAt:null, started:false, finishedTimed:false };
+
+function renderRest(step){
+  const c = document.getElementById("sessContent");
+  const transition = step.transition ? `<div class="ring-caption" style="color:var(--accent);font-weight:600;margin-bottom:4px;">${step.transition}</div>` : "";
+  c.innerHTML = `
+    <div class="sess-body">
+      <div class="phase-tag ${phaseTagClass(step.phase)}">Récupération</div>
+      <div class="timer-stage">
+        <div class="ring-wrap">
+          <svg width="250" height="250" viewBox="0 0 250 250">
+            <circle class="ring-track" cx="125" cy="125" r="115"></circle>
+            <circle class="ring-prog rest" id="ringProg" cx="125" cy="125" r="115"></circle>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-time" id="ringTime">${fmtClock(step.dur)}</div>
+            <div class="ring-caption">Repos</div>
+          </div>
+        </div>
+        ${transition}
+        <div class="ring-next">Ensuite : <b>${step.nextName||"—"}</b></div>
+        <div class="timer-adjust">
+          <button class="ta-btn" onclick="timerAdd(-15)">−15s</button>
+          <button class="ta-btn pause" id="ringPause" onclick="timerToggle()">⏸ Pause</button>
+          <button class="ta-btn" onclick="timerAdd(15)">+15s</button>
+        </div>
+      </div>
+    </div>
+    <div class="sess-actions">
+      <button class="btn-primary" onclick="skipRest()">Passer le repos →</button>
+    </div>`;
+  startCountdown(step.dur, "rest", ()=>{ advance(); });
+}
+
+function skipRest(){ stopTimer(); advance(); }
+
+/* ---------- timed exercise ---------- */
+
+function setupTimedExercise(ex, perSide){
+  // l'utilisateur démarre via le bouton ; pour 'hold-each-timed' on enchaîne 2 côtés
+  stopTimer();
+  const dur = computedReps(ex);
+  timer.ex = ex; timer.perSide = perSide; timer.side = 1; timer.armed = false;
+  timer.started = false; timer.finishedTimed = false;
+  timer.mode = "timed"; timer.remaining = dur; timer.total = dur; timer.running = false;
+  timer.onDone = null; timer.endAt = null;
+}
+
+function exDoneBtnLabel(txt){ const b=document.getElementById("exDoneBtn"); if(b) b.textContent = txt; }
+
+function startTimedRun(){
+  const ex = timer.ex;
+  timer.started = true;
+  const dur = computedReps(ex);
+  const perSide = timer.perSide;
+  const cap = document.getElementById("ringCaption");
+  if(cap) cap.textContent = perSide ? ("Côté " + timer.side) : "En cours";
+  exDoneBtnLabel(perSide && timer.side===1 ? "Côté 1 en cours…" : "En cours…");
+  const btn = document.getElementById("exDoneBtn");
+  if(btn) btn.disabled = true, btn.style.opacity = .5;
+
+  startCountdown(dur, "timed", ()=>{
+    beep();
+    if(perSide && timer.side===1){
+      timer.side = 2;
+      const cap2 = document.getElementById("ringCaption");
+      if(cap2) cap2.textContent = "Côté 2 — prêt ?";
+      const rt = document.getElementById("ringTime"); if(rt) rt.textContent = computedReps(ex);
+      const b = document.getElementById("exDoneBtn");
+      if(b){ b.disabled=false; b.style.opacity=1; b.textContent="Démarrer côté 2"; }
+      // re-armer pour le 2e côté
+      timer.armed = false;
+    } else {
+      // terminé
+      const b = document.getElementById("exDoneBtn");
+      if(b){ b.disabled=false; b.style.opacity=1; b.textContent="Suivant →"; }
+      const cap3 = document.getElementById("ringCaption"); if(cap3) cap3.textContent = "Terminé 💪";
+      timer.finishedTimed = true;
+    }
+  });
+}
+
+/* ---------- generic countdown (timestamp-based) ---------- */
+
+function startCountdown(seconds, mode, onDone){
+  stopTimer();
+  timer.total = seconds;
+  timer.remaining = seconds;
+  timer.mode = mode;
+  timer.onDone = onDone;
+  timer.running = true;
+  timer.finishedTimed = false;
+  timer.endAt = Date.now() + seconds*1000;
+  initRing(mode);
+  // Petit décalage pour que la transition CSS du ring parte de "plein"
+  // puis s'anime immédiatement vers la valeur courante.
+  updateRing(true);
+  const pauseBtn = document.getElementById("ringPause");
+  if(pauseBtn) pauseBtn.textContent = "⏸ Pause";
+  // boucle fréquente (200ms) : le décompte visuel bouge tout de suite,
+  // et l'affichage reste précis même si un tick est sauté.
+  timer.id = setInterval(tickLoop, 200);
+}
+
+function tickLoop(){
+  if(!timer.running || timer.endAt==null) return;
+  const msLeft = timer.endAt - Date.now();
+  const secLeft = Math.max(0, Math.ceil(msLeft/1000));
+  timer.remaining = secLeft;
+  updateRing(false);
+  if(msLeft <= 0){
+    clearInterval(timer.id); timer.id=null; timer.running=false; timer.endAt=null;
+    if(timer.mode==="rest") beep();
+    if(timer.onDone){ const cb=timer.onDone; timer.onDone=null; cb(); }
+  }
+}
+
+function stopTimer(){
+  if(timer.id){ clearInterval(timer.id); timer.id=null; }
+  timer.running=false;
+}
+
+function initRing(mode){
+  const ring = document.getElementById("ringProg");
+  if(!ring) return;
+  const r = 115, circ = 2*Math.PI*r;
+  ring.style.strokeDasharray = circ;
+  ring.style.strokeDashoffset = 0;
+  ring.className = "ring-prog " + (mode==="timed"?"timed":"rest");
+}
+
+function updateRing(isStart){
+  const t = document.getElementById("ringTime");
+  if(t) t.textContent = timer.mode==="timed" ? Math.max(0,timer.remaining) : fmtClock(Math.max(0,timer.remaining));
+  const ring = document.getElementById("ringProg");
+  if(ring){
+    const r=115, circ=2*Math.PI*r;
+    // au démarrage on calcule la fraction sur le temps réel restant (millisecondes)
+    let frac;
+    if(timer.endAt!=null && timer.running){
+      const msLeft = Math.max(0, timer.endAt - Date.now());
+      frac = timer.total>0 ? (msLeft/1000)/timer.total : 0;
+    } else {
+      frac = timer.total>0 ? timer.remaining/timer.total : 0;
+    }
+    ring.style.strokeDashoffset = circ*(1-Math.max(0,Math.min(1,frac)));
+  }
+}
+
+function timerToggle(){
+  // Sur un exercice chronométré pas encore lancé, le bouton pause ne fait rien
+  // (le démarrage se fait via le bouton principal "C'est parti").
+  if(timer.mode==="timed" && !timer.started) return;
+  if(timer.finishedTimed) return;
+
+  if(!timer.running){
+    // reprendre : recalculer la fin à partir du temps restant figé
+    timer.running = true;
+    timer.endAt = Date.now() + timer.remaining*1000;
+    const pauseBtn=document.getElementById("ringPause"); if(pauseBtn) pauseBtn.textContent="⏸ Pause";
+    if(timer.id) clearInterval(timer.id);
+    timer.id = setInterval(tickLoop, 200);
+    updateRing(true);
+  } else {
+    // pause : figer le temps restant
+    const msLeft = timer.endAt - Date.now();
+    timer.remaining = Math.max(0, Math.ceil(msLeft/1000));
+    stopTimer();
+    timer.endAt = null;
+    const pauseBtn=document.getElementById("ringPause"); if(pauseBtn) pauseBtn.textContent="▶ Reprendre";
+    updateRing(false);
+  }
+}
+
+function timerAdd(s){
+  timer.remaining = Math.max(1, timer.remaining + s);
+  if(timer.remaining>timer.total) timer.total = timer.remaining;
+  if(timer.running && timer.endAt!=null){
+    timer.endAt = Date.now() + timer.remaining*1000;
+  }
+  updateRing(false);
+}
+
+function fmtClock(s){ const m=Math.floor(s/60), sec=s%60; return m>0 ? (m+":"+String(sec).padStart(2,"0")) : String(sec); }
+
+let _audioCtx = null;
+function unlockAudio(){
+  try {
+    if(!_audioCtx) _audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state === "suspended") _audioCtx.resume();
+  } catch(e){}
+}
+
+function beep(){
+  try {
+    if(!_audioCtx) _audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state === "suspended") _audioCtx.resume();
+    const ctx = _audioCtx;
+    [0,0.18,0.36].forEach(t=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value=880; o.type="sine";
+      g.gain.setValueAtTime(0.0001, ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime+t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+t+0.15);
+      o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+0.16);
+    });
+  } catch(e){}
+  if(navigator.vibrate) navigator.vibrate([150,80,150]);
+}
+
+/* ---------- override exerciseDone to handle timed start ---------- */
+function exerciseDone(){
+  const step = currentStep();
+  if(step.type!=="exercise"){ stopTimer(); advance(); return; }
+
+  const ex = step.ex;
+  const isTimed = (ex.kind==="timed" || ex.kind==="hold-each-timed");
+
+  if(isTimed){
+    // Terminé -> compter et avancer
+    if(timer.finishedTimed){
+      if(step.phase==="main") SES.doneExercises++;
+      stopTimer(); advance(); return;
+    }
+    // Timer en cours -> ignorer (l'utilisateur attend la fin ou met en pause)
+    if(timer.running) return;
+    // Sinon -> lancer (côté 1 au départ, ou côté 2 après la pause inter-côté)
+    startTimedRun();
+    return;
+  }
+
+  // Exercice en reps : validation manuelle directe
+  if(step.phase==="main"){
+    SES.doneExercises++;
+    SES.totalReps += computedReps(ex) * (ex.sets||1) * (ex.kind==="hold-each"?2:1);
+  }
+  stopTimer(); advance();
+}
+
+/* =====================================================================
+   FLOW : preview -> session -> finish
+   ===================================================================== */
+
+let previewKey = null;
+
+function openPreview(sessKey){
+  previewKey = sessKey;
+  const P = PROGRAM[sessKey];
+  document.getElementById("pvTitle").textContent = P.name + " — " + P.subtitle;
+
+  const warm = WARMUPS[sessKey], main = P.main, stretch = STRETCHES[sessKey];
+  // durée estimée
+  const est = estimateDuration(sessKey);
+  document.getElementById("pvMeta").textContent = `${main.length} exercices · échauffement + étirements · ~${est} min`;
+
+  const list = document.getElementById("pvList");
+  list.innerHTML =
+    phaseSection("Échauffement", "var(--warm)", warm) +
+    phaseSection("Renforcement", "var(--accent)", main) +
+    phaseSection("Étirements", "var(--stretch)", stretch);
+  nav("preview");
+}
+
+function phaseSection(label, color, exos){
+  let html = `<div class="pv-phase-label"><span class="pd" style="background:${color}"></span>${label}</div>`;
+  exos.forEach((ex,i)=>{
+    html += `<div class="pv-item">
+      <div class="pvn">${i+1}</div>
+      <div class="pvb"><div class="pvt">${ex.name}</div><div class="pvtg">${(ex.tags||[]).join(" · ")}</div></div>
+      <div class="pvr">${pvTargetShort(ex)}</div>
+    </div>`;
+  });
+  return html;
+}
+function pvTargetShort(ex){
+  const reps = computedReps(ex);
+  const resist = computedResist(ex);
+  let s;
+  if(ex.kind==="timed"||ex.kind==="hold-each-timed") s = (ex.sets?ex.sets+"×":"")+reps+"s";
+  else s = (ex.sets?ex.sets+"×":"")+reps;
+  if(resist) s += " · "+resist+"kg";
+  return s;
+}
+
+function estimateDuration(sessKey){
+  const steps = buildSteps(sessKey);
+  let sec = 0;
+  steps.forEach(s=>{
+    if(s.type==="rest") sec += s.dur;
+    else {
+      const ex = s.ex;
+      if(ex.kind==="timed") sec += computedReps(ex)+5;
+      else if(ex.kind==="hold-each-timed") sec += computedReps(ex)*2+10;
+      else sec += (ex.sets||1)*30; // estimation reps
+    }
+  });
+  return Math.round(sec/60);
+}
+
+function launchSession(){
+  unlockAudio();
+  SES = newSession(previewKey);
+  showChrome(false);
+  nav("session");
+  renderStep();
+  window.scrollTo(0,0);
+}
+
+function confirmQuitSession(){
+  if(confirm("Quitter la séance ? Ta progression sera sauvegardée pour reprise.")){
+    saveActive();
+    stopTimer();
+    SES = null;
+    showChrome(true);
+    nav("home");
+    renderDashboard();
+  }
+}
+
+function saveActive(){
+  if(SES) rawSet(SESSION_KEY, JSON.stringify({sessKey:SES.sessKey, idx:SES.idx, startTime:SES.startTime, exFeedback:SES.exFeedback, doneExercises:SES.doneExercises, totalReps:SES.totalReps}));
+}
+function clearActive(){ rawDel(SESSION_KEY); }
+function loadActive(){
+  const raw = rawGet(SESSION_KEY);
+  if(!raw) return null;
+  try { return JSON.parse(raw); } catch(e){ return null; }
+}
+function resumeSession(){
+  const a = loadActive();
+  if(!a) return;
+  SES = newSession(a.sessKey);
+  SES.idx = Math.min(a.idx, SES.steps.length-1);
+  SES.startTime = a.startTime || Date.now();
+  SES.exFeedback = a.exFeedback || [];
+  SES.doneExercises = a.doneExercises || 0;
+  SES.totalReps = a.totalReps || 0;
+  showChrome(false);
+  nav("session");
+  renderStep();
+  window.scrollTo(0,0);
+}
+
+/* ---------- FINISH ---------- */
+
+let finishFeel = null;
+
+function goToFinish(){
+  stopTimer();
+  showChrome(false);
+  const durMin = Math.max(1, Math.round((Date.now()-SES.startTime)/60000));
+  const hardCount = SES.exFeedback.filter(f=>f.signal==="hard").length;
+  const easyCount = SES.exFeedback.filter(f=>f.signal==="easy").length;
+
+  // comparaison dernière séance même type
+  const prevSame = [...DB.history].reverse().find(h=>h.session===SES.sessKey);
+  let cmp = "";
+  if(prevSame){
+    const diff = durMin - prevSame.durationMin;
+    cmp = diff===0 ? "même durée que la dernière fois" : (diff>0?`+${diff} min vs dernière`:`${diff} min vs dernière`);
+  }
+
+  const recapHtml = SES.exFeedback.length ?
+    `<div class="fb-recap">` + SES.exFeedback.map(f=>{
+      const ex = exById(f.exId);
+      return `<div class="fb-recap-item"><span class="fb-recap-name">${ex?ex.name:f.exId}</span><span class="fb-pill ${f.signal}">${f.signal==="hard"?"Trop dur":"Trop facile"}</span></div>`;
+    }).join("") + `</div>` : "";
+
+  const c = document.getElementById("sessContent");
+  // on réutilise l'écran session pour le finish
+  document.getElementById("sessTitle").textContent = "Séance terminée";
+  document.getElementById("sessPhase").textContent = "Bilan";
+  document.getElementById("sessStepCount").textContent = "";
+  document.getElementById("sessProgress").innerHTML = "";
+
+  c.innerHTML = `
+    <div class="sess-body">
+      <div class="finish-hero">
+        <div class="finish-emoji">🎉</div>
+        <div class="finish-title">${PROGRAM[SES.sessKey].name} bouclée</div>
+        <div class="finish-sub">${PROGRAM[SES.sessKey].subtitle}</div>
+      </div>
+      <div class="finish-stats">
+        <div class="fs-box"><div class="fs-num">${durMin}</div><div class="fs-lbl">minutes</div></div>
+        <div class="fs-box"><div class="fs-num">${SES.doneExercises}</div><div class="fs-lbl">exos faits</div></div>
+        <div class="fs-box"><div class="fs-num small">${cmp?cmp.split(" ")[0]:"—"}</div><div class="fs-lbl">${cmp?"vs dernière":"1ère fois"}</div></div>
+      </div>
+
+      ${recapHtml}
+
+      <div class="feel-label">Comment tu te sens globalement ?</div>
+      <div class="feel-row">
+        <button class="feel-btn" data-feel="easy" onclick="setFeel('easy',this)"><span class="fi">😎</span>Facile</button>
+        <button class="feel-btn" data-feel="ok" onclick="setFeel('ok',this)"><span class="fi">💪</span>Parfait</button>
+        <button class="feel-btn" data-feel="hard" onclick="setFeel('hard',this)"><span class="fi">😤</span>Dur</button>
+        <button class="feel-btn" data-feel="dead" onclick="setFeel('dead',this)"><span class="fi">🥵</span>Cramé</button>
+      </div>
+
+      <div class="feel-label">Un commentaire ? (optionnel — Claude pourra le lire via le bilan)</div>
+      <textarea class="comment-box" id="sessComment" placeholder="Ex : douleur à l'épaule sur les pompes, manque de temps, super énergie aujourd'hui…"></textarea>
+    </div>
+    <div class="sess-actions">
+      <button class="btn-primary" onclick="commitSession()">Enregistrer la séance</button>
+    </div>`;
+  finishFeel = null;
+  window.scrollTo(0,0);
+}
+
+function setFeel(feel, btn){
+  finishFeel = feel;
+  document.querySelectorAll(".feel-btn").forEach(b=>b.classList.remove("sel"));
+  btn.classList.add("sel");
+}
+
+function commitSession(){
+  try {
+    const durMin = Math.max(1, Math.round((Date.now()-SES.startTime)/60000));
+    const comment = (document.getElementById("sessComment")||{}).value || "";
+
+    // appliquer les feedbacks par exercice
+    SES.exFeedback.forEach(f=> applyExFeedback(f.exId, f.signal));
+
+    // enregistrer dans l'historique
+    DB.history.push({
+      session: SES.sessKey,
+      date: new Date().toISOString(),
+      durationMin: durMin,
+      feel: finishFeel,
+      comment: comment.trim(),
+      exFeedback: SES.exFeedback.slice(),
+      doneExercises: SES.doneExercises
+    });
+    saveDB();
+    clearActive();
+
+    SES = null;
+    showChrome(true);
+    showToast("Séance enregistrée ✅");
+    renderDashboard(); renderHistory(); renderProgress();
+    nav("home");
+  } catch(e){
+    console.error(e);
+    SES=null; showChrome(true); showToast("Séance enregistrée ✅");
+    renderDashboard(); renderHistory(); nav("home");
+  }
+}
+
+/* =====================================================================
+   RENDERING : dashboard, history, progress
+   ===================================================================== */
+
+function showChrome(show){
+  document.getElementById("navbar").classList.toggle("hidden", !show);
+  document.getElementById("topbar").style.display = show ? "" : "none";
+}
+
+function nav(s){
+  document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(x=>x.classList.remove("active"));
+  const scr = document.getElementById("screen-"+s);
+  if(scr) scr.classList.add("active");
+  const navEl = document.getElementById("nav-"+s);
+  if(navEl) navEl.classList.add("active");
+  window.scrollTo(0,0);
+}
+
+function renderDashboard(){
+  const next = suggestedSession();
+  const P = PROGRAM[next];
+  document.getElementById("nextTitle").textContent = P.name;
+  document.getElementById("nextSub").innerHTML = P.subtitle + ` · <b>${P.main.length} exercices</b> · ~${estimateDuration(next)} min`;
+
+  const now = new Date();
+  const ws = new Date(now); ws.setDate(now.getDate()-((now.getDay()+6)%7)); ws.setHours(0,0,0,0);
+  const weekCount = DB.history.filter(h=>new Date(h.date)>=ws).length;
+  document.getElementById("statWeek").textContent = weekCount;
+  document.getElementById("statTotal").textContent = DB.history.length;
+  document.getElementById("streakNum").textContent = DB.history.length;
+  const lvls = ["A","B","C"].map(k=>sessionLevel(k));
+  document.getElementById("statLevel").textContent = Math.max(1, Math.round(lvls.reduce((a,b)=>a+b,0)/3));
+
+  document.getElementById("storageWarn").classList.toggle("show", !storageOK);
+
+  // bannière reprise
+  const a = loadActive();
+  const slot = document.getElementById("resumeSlot");
+  if(a && (a.idx||0) > 0){
+    const steps = buildSteps(a.sessKey);
+    const total = steps.length;
+    slot.innerHTML = `<div class="resume-banner">
+      <div class="ri">⏯️</div>
+      <div class="rt"><div class="rtt">Séance ${a.sessKey} en cours</div><div class="rts">Étape ${Math.min(a.idx+1,total)} sur ${total}</div></div>
+      <button onclick="resumeSession()">Reprendre</button>
+    </div>`;
+  } else { slot.innerHTML = ""; }
+}
+
+function renderHistory(){
+  const el = document.getElementById("histList");
+  if(DB.history.length===0){
+    el.innerHTML = `<div class="empty"><div class="ei">📋</div>Aucune séance enregistrée.<br>Lance ta première séance guidée !</div>`;
+    return;
+  }
+  const feelEmoji = {easy:"😎", ok:"💪", hard:"😤", dead:"🥵"};
+  el.innerHTML = [...DB.history].reverse().map((h,i)=>{
+    const realIdx = DB.history.length-1-i;
+    const P = PROGRAM[h.session];
+    const d = new Date(h.date);
+    const dateStr = d.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"}) + " · " + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    return `<div class="hist-item" onclick="toggleHistDetail(${realIdx})">
+      <div class="hist-badge ${h.session.toLowerCase()}">${h.session}</div>
+      <div class="hist-info">
+        <div class="hist-name">${P.name} — ${P.subtitle}</div>
+        <div class="hist-date">${dateStr} · ${h.durationMin||"?"} min${h.comment?" · 💬":""}</div>
+      </div>
+      <div class="hist-feel">${feelEmoji[h.feel]||""}</div>
+    </div>
+    <div id="histDetail-${realIdx}" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin:-4px 0 10px;font-size:13px;color:#b8b8b8;line-height:1.6;"></div>`;
+  }).join("");
+}
+
+function toggleHistDetail(idx){
+  const el = document.getElementById("histDetail-"+idx);
+  if(!el) return;
+  if(el.style.display==="none"){
+    const h = DB.history[idx];
+    let html = "";
+    if(h.exFeedback && h.exFeedback.length){
+      html += "<b>Retours exercices :</b><br>";
+      h.exFeedback.forEach(f=>{ const ex=exById(f.exId); html += `• ${ex?ex.name:f.exId} — ${f.signal==="hard"?"trop dur":"trop facile"}<br>`; });
+    } else { html += "Aucun retour spécifique sur les exercices.<br>"; }
+    if(h.comment){ html += `<br><b>Commentaire :</b><br>“${h.comment}”`; }
+    el.innerHTML = html;
+    el.style.display = "block";
+  } else { el.style.display = "none"; }
+}
+
+function renderProgress(){
+  // deload
+  const dl = deloadCandidates();
+  const dlSlot = document.getElementById("deloadSlot");
+  if(dl.length){
+    dlSlot.innerHTML = `<div class="deload-alert"><span class="da">⚠️</span><div>Tu as marqué <b>${dl.map(id=>{const e=exById(id);return e?e.name:id;}).join(", ")}</b> comme "trop dur" plusieurs fois. L'app a déjà allégé ces exercices. Si ça reste difficile, pense à revoir la technique ou à réduire encore via le bouton "trop dur".</div></div>`;
+  } else { dlSlot.innerHTML = ""; }
+
+  const el = document.getElementById("adjList");
+  el.innerHTML = ["A","B","C"].map(k=>{
+    const lvl = sessionLevel(k);
+    const pct = Math.min(100, Math.max(0, ((lvl-1)/6)*100));
+    const P = PROGRAM[k];
+    return `<div class="adj-card">
+      <div class="adj-head"><div class="adj-title">${P.name} — ${P.subtitle}</div><div class="adj-level">Niveau ${lvl}</div></div>
+      <div class="adj-bar"><div class="adj-fill" style="width:${pct}%"></div></div>
+      <div class="adj-meta">${countTimesDone(k)} séance(s) réalisée(s)</div>
+    </div>`;
+  }).join("");
+
+  refreshBackupInfo();
+}
+
+function countTimesDone(k){ return DB.history.filter(h=>h.session===k).length; }
+
+/* =====================================================================
+   EXPORT (bilan pour Claude)
+   ===================================================================== */
+
+function openExport(){
+  document.getElementById("exportText").value = buildExport();
+  document.getElementById("exportModal").classList.add("active");
+}
+function closeExport(){ document.getElementById("exportModal").classList.remove("active"); }
+
+function buildExport(){
+  const lines = [];
+  lines.push("=== BILAN HOME GYM ===");
+  lines.push("Date du bilan : " + new Date().toLocaleDateString("fr-FR"));
+  lines.push("Total séances : " + DB.history.length);
+  lines.push("");
+  lines.push("NIVEAUX ACTUELS PAR SÉANCE :");
+  ["A","B","C"].forEach(k=>{
+    lines.push(`  Séance ${k} (${PROGRAM[k].subtitle}) — niveau ${sessionLevel(k)} — ${countTimesDone(k)} fois`);
+  });
+  lines.push("");
+  lines.push("AJUSTEMENTS PAR EXERCICE (niveau, + = monté, - = allégé) :");
+  Object.keys(DB.exAdjust).forEach(id=>{
+    const lvl = DB.exAdjust[id];
+    if(lvl!==0){ const ex=exById(id); lines.push(`  ${ex?ex.name:id} : ${lvl>0?"+":""}${lvl}`); }
+  });
+  if(Object.values(DB.exAdjust).every(v=>v===0)) lines.push("  (aucun ajustement encore)");
+  lines.push("");
+  lines.push("HISTORIQUE DÉTAILLÉ (10 dernières) :");
+  [...DB.history].reverse().slice(0,10).forEach(h=>{
+    const d = new Date(h.date);
+    lines.push(`  ${d.toLocaleDateString("fr-FR")} — Séance ${h.session} — ${h.durationMin||"?"}min — ressenti: ${h.feel||"?"}`);
+    if(h.exFeedback && h.exFeedback.length){
+      h.exFeedback.forEach(f=>{ const ex=exById(f.exId); lines.push(`      • ${ex?ex.name:f.exId} : ${f.signal==="hard"?"TROP DUR":"trop facile"}`); });
+    }
+    if(h.comment) lines.push(`      💬 "${h.comment}"`);
+  });
+  lines.push("");
+  lines.push("=== FIN DU BILAN ===");
+  lines.push("");
+  lines.push("Claude, peux-tu analyser ces données et me proposer des ajustements de mon programme (exercices à modifier, remplacer, intensité, structure) ?");
+  return lines.join("\n");
+}
+
+function copyExport(){
+  const ta = document.getElementById("exportText");
+  ta.select();
+  try {
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(()=>showToast("Copié ✅")).catch(()=>{ document.execCommand("copy"); showToast("Copié ✅"); });
+    } else { document.execCommand("copy"); showToast("Copié ✅"); }
+  } catch(e){ showToast("Sélectionne et copie manuellement"); }
+}
+
+/* =====================================================================
+   SAUVEGARDE — Export / Import par fichier JSON
+   ===================================================================== */
+
+const BACKUP_VERSION = 2;
+
+function exportBackup(){
+  try {
+    const payload = {
+      app: "homegym",
+      backupVersion: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      data: {
+        history: DB.history,
+        adjustments: DB.adjustments,
+        exAdjust: DB.exAdjust
+      }
+    };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    const stamp = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    a.href = url;
+    a.download = "homegym-sauvegarde-"+stamp+".json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    showToast("Sauvegarde exportée 💾");
+    refreshBackupInfo("Dernier export : maintenant ("+DB.history.length+" séance(s)).");
+  } catch(e){
+    console.error(e);
+    showToast("Échec de l'export");
+  }
+}
+
+function importBackup(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const data = parsed && parsed.data ? parsed.data : parsed; // tolère un export brut
+      if(!data || (!Array.isArray(data.history) && !data.exAdjust && !data.adjustments)){
+        showToast("Fichier non reconnu");
+        return;
+      }
+      const incomingCount = Array.isArray(data.history) ? data.history.length : 0;
+      const currentCount = DB.history.length;
+      const proceed = confirm(
+        "Importer cette sauvegarde ?\n\n" +
+        "Sauvegarde : " + incomingCount + " séance(s)\n" +
+        "Actuel : " + currentCount + " séance(s)\n\n" +
+        "Les données actuelles seront remplacées."
+      );
+      if(!proceed){ event.target.value = ""; return; }
+
+      DB.history = Array.isArray(data.history) ? data.history : [];
+      DB.adjustments = Object.assign({A:0,B:0,C:0}, data.adjustments||{});
+      DB.exAdjust = data.exAdjust || {};
+      saveDB();
+      renderDashboard(); renderHistory(); renderProgress();
+      showToast("Sauvegarde importée ✅");
+      refreshBackupInfo("Importé : "+incomingCount+" séance(s).");
+    } catch(err){
+      console.error(err);
+      showToast("Fichier illisible");
+    }
+    event.target.value = ""; // permet de réimporter le même fichier
+  };
+  reader.onerror = function(){ showToast("Erreur de lecture"); event.target.value=""; };
+  reader.readAsText(file);
+}
+
+function refreshBackupInfo(msg){
+  const el = document.getElementById("backupInfo");
+  if(!el) return;
+  if(msg){ el.textContent = msg; return; }
+  // message par défaut : état du stockage
+  if(!storageOK){
+    el.innerHTML = "⚠️ Stockage local indisponible ici — pense à exporter régulièrement.";
+  } else {
+    el.textContent = DB.history.length + " séance(s) en mémoire.";
+  }
+}
+
+/* =====================================================================
+   UTILS + INIT
+   ===================================================================== */
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._to); t._to = setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+function resetAll(){
+  if(!confirm("Effacer tout l'historique et la progression ?")) return;
+  rawDel(STORE_KEY); rawDel(SESSION_KEY); rawDel("homegym_v2_seeded");
+  DB = { history:[], adjustments:{A:0,B:0,C:0}, exAdjust:{} };
+  renderDashboard(); renderHistory(); renderProgress();
+  showToast("Données réinitialisées");
+}
+
+function seedInitialData(){
+  // Réinjecte la première séance réelle de Fabien (06/06/2026) si aucune donnée n'existe.
+  // Ne s'exécute qu'une seule fois : marqueur posé même si l'utilisateur efface ensuite.
+  const seededMarker = rawGet("homegym_v2_seeded");
+  if(seededMarker) return;
+  if(DB.history.length > 0){ rawSet("homegym_v2_seeded","1"); return; }
+
+  DB.history.push({
+    session: "A",
+    date: "2026-06-06T12:00:00.000Z",
+    durationMin: 10,
+    feel: "ok",
+    comment: "Première séance test. Intensité parfaite. (Pompes serrées un peu dures.)",
+    exFeedback: [{ exId:"a3", signal:"hard" }],
+    doneExercises: 6
+  });
+  // applique l'ajustement correspondant (pompes serrées allégées)
+  DB.exAdjust["a3"] = -1;
+  saveDB();
+  rawSet("homegym_v2_seeded","1");
+}
+
+function init(){
+  loadDB();
+  seedInitialData();
+  refreshBackupInfo();
+  renderDashboard();
+  renderHistory();
+  renderProgress();
+}
+init();
+</script>
+</body>
+</html>
