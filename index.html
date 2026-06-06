@@ -1602,37 +1602,14 @@ function showToast(msg){
 
 function resetAll(){
   if(!confirm("Effacer tout l'historique et la progression ?")) return;
-  rawDel(STORE_KEY); rawDel(SESSION_KEY); rawDel("homegym_v2_seeded");
+  rawDel(STORE_KEY); rawDel(SESSION_KEY);
   DB = { history:[], adjustments:{A:0,B:0,C:0}, exAdjust:{} };
   renderDashboard(); renderHistory(); renderProgress();
   showToast("Données réinitialisées");
 }
 
-function seedInitialData(){
-  // Réinjecte la première séance réelle de Fabien (06/06/2026) si aucune donnée n'existe.
-  // Ne s'exécute qu'une seule fois : marqueur posé même si l'utilisateur efface ensuite.
-  const seededMarker = rawGet("homegym_v2_seeded");
-  if(seededMarker) return;
-  if(DB.history.length > 0){ rawSet("homegym_v2_seeded","1"); return; }
-
-  DB.history.push({
-    session: "A",
-    date: "2026-06-06T12:00:00.000Z",
-    durationMin: 10,
-    feel: "ok",
-    comment: "Première séance test. Intensité parfaite. (Pompes serrées un peu dures.)",
-    exFeedback: [{ exId:"a3", signal:"hard" }],
-    doneExercises: 6
-  });
-  // applique l'ajustement correspondant (pompes serrées allégées)
-  DB.exAdjust["a3"] = -1;
-  saveDB();
-  rawSet("homegym_v2_seeded","1");
-}
-
 function init(){
   loadDB();
-  seedInitialData();
   refreshBackupInfo();
   renderDashboard();
   renderHistory();
