@@ -359,6 +359,49 @@
     padding: 12px 14px; font-size: 12px; line-height: 1.5; margin-bottom: 16px; color: #d4c08a; display: none;
   }
   .storage-warn.show { display: block; }
+
+  /* reco timing dans la next-card */
+  .timing-reco {
+    display: flex; align-items: center; gap: 8px; margin-top: 14px;
+    font-size: 13px; padding: 10px 12px; border-radius: 10px; line-height: 1.4;
+  }
+  .timing-reco .ti { font-size: 16px; flex-shrink: 0; }
+  .timing-reco.early { background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); color: var(--warm); }
+  .timing-reco.ideal { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.3); color: var(--green); }
+  .timing-reco.late { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); color: var(--red); }
+  .timing-reco b { font-weight: 700; }
+
+  /* planning hebdo */
+  .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .week-nav-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 9px; font-size: 16px; cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .week-nav-btn:active { transform: scale(.92); }
+  .week-nav-btn:disabled { opacity: .3; cursor: not-allowed; }
+  .week-nav-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .week-strip { display: flex; gap: 6px; }
+  .day-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .day-head { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .day-head.today { color: var(--accent); }
+  .day-cell {
+    width: 100%; aspect-ratio: 1; border-radius: 10px; background: var(--surface); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px; position: relative;
+  }
+
+  .day-cell.reco { border-style: dashed; border-color: var(--accent); color: var(--accent); }
+  .day-cell.reco-bonus { border-style: dashed; border-color: var(--muted); color: var(--muted); }
+  .day-cell.today-ring { box-shadow: 0 0 0 2px var(--accent) inset; }
+  .day-cell .empty-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); }
+  .day-cell .reco-label { font-family: 'DM Sans', sans-serif; font-size: 9px; font-weight: 600; position: absolute; bottom: 4px; }
+  .week-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 11px; color: var(--muted); }
+  .week-legend .li { display: flex; align-items: center; gap: 5px; }
+  .week-legend .ld { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--border); }
+  .week-legend .ld.dash { border-style: dashed; border-color: var(--accent); }
+  .week-progress-text { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; }
+  .week-progress-text b { color: var(--text); }
 </style>
 </head>
 <body>
@@ -385,8 +428,23 @@
       <span class="phase-chip chip-main"><span class="pd" style="background:var(--accent)"></span>Renfo</span>
       <span class="phase-chip chip-stretch"><span class="pd" style="background:var(--stretch)"></span>Étirements</span>
     </div>
+    <div id="timingReco"></div>
   </div>
   <div style="margin-top:14px;"><button class="btn-primary" onclick="openPreview(suggestedSession())">Voir la séance →</button></div>
+
+  <div class="section-title">Ma semaine</div>
+  <div class="week-nav">
+    <button class="week-nav-btn" onclick="changeWeek(-1)">←</button>
+    <div class="week-nav-label" id="weekNavLabel">Cette semaine</div>
+    <button class="week-nav-btn" id="weekNavNext" onclick="changeWeek(1)">→</button>
+  </div>
+  <div class="week-strip" id="weekStrip"></div>
+  <div class="week-progress-text" id="weekProgressText"></div>
+  <div class="week-legend">
+    <div class="li"><span class="ld" style="border-color:var(--green);background:rgba(74,222,128,.12)"></span>Faite</div>
+    <div class="li"><span class="ld dash"></span>Recommandée</div>
+    <div class="li"><span class="ld" style="border-style:dashed;border-color:var(--muted)"></span>Bonus</div>
+  </div>
 
   <div class="section-title">Ou choisis</div>
   <div class="session-pick">
@@ -1381,6 +1439,183 @@ function renderDashboard(){
       <button onclick="resumeSession()">Reprendre</button>
     </div>`;
   } else { slot.innerHTML = ""; }
+
+  renderTimingReco();
+  weekOffset = 0;
+  renderWeekStrip();
+}
+
+/* ---------- Reco de timing & planning hebdo ---------- */
+
+// Constantes de rythme (1 jour sur 2 visé)
+const TIMING = { idealGapDays: 2, minGapDays: 1, lateDays: 5, weeklyTarget: 3 };
+
+function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+function daysBetween(a,b){ return Math.round((startOfDay(b)-startOfDay(a))/86400000); }
+
+function lastSessionDate(){
+  if(DB.history.length===0) return null;
+  return new Date(DB.history[DB.history.length-1].date);
+}
+
+function renderTimingReco(){
+  const el = document.getElementById("timingReco");
+  if(!el) return;
+  const last = lastSessionDate();
+  const now = new Date();
+
+  if(!last){
+    el.className = "timing-reco ideal";
+    el.innerHTML = `<span class="ti">✅</span><div>C'est le moment de te lancer — fais ta première séance quand tu veux.</div>`;
+    return;
+  }
+
+  const gap = daysBetween(last, now); // jours écoulés depuis la dernière séance
+  const nextLetter = suggestedSession();
+
+  // jour optimal = dernière + 2 jours ; possible dès dernière + 1 jour
+  const idealDate = new Date(startOfDay(last).getTime() + TIMING.idealGapDays*86400000);
+  const possibleDate = new Date(startOfDay(last).getTime() + TIMING.minGapDays*86400000);
+  const fmtDay = d => d.toLocaleDateString("fr-FR",{weekday:"long"});
+
+  if(gap <= 0){
+    // séance faite aujourd'hui
+    el.className = "timing-reco early";
+    el.innerHTML = `<span class="ti">🛌</span><div>Séance faite aujourd'hui. Repos conseillé — prochaine (<b>${nextLetter}</b>) idéalement <b>${fmtDay(idealDate)}</b>, possible dès <b>demain</b> (séance différente).</div>`;
+  } else if(gap < TIMING.idealGapDays){
+    // 1 jour après : possible mais pas encore optimal
+    el.className = "timing-reco ideal";
+    el.innerHTML = `<span class="ti">👍</span><div>Tu peux faire la séance <b>${nextLetter}</b> dès aujourd'hui (muscles différents). L'idéal récupération reste <b>${fmtDay(idealDate)}</b>.</div>`;
+  } else if(gap <= TIMING.lateDays){
+    // fenêtre idéale
+    el.className = "timing-reco ideal";
+    el.innerHTML = `<span class="ti">🔥</span><div>C'est le bon moment pour la séance <b>${nextLetter}</b> — tu es dans ta fenêtre idéale.</div>`;
+  } else {
+    // tu traînes
+    el.className = "timing-reco late";
+    el.innerHTML = `<span class="ti">⏰</span><div>${gap} jours sans séance. Reprends en douceur avec la séance <b>${nextLetter}</b> quand tu peux.</div>`;
+  }
+}
+
+let weekOffset = 0; // 0 = semaine courante, -1 = précédente, +1 = suivante
+
+function changeWeek(delta){
+  weekOffset += delta;
+  if(weekOffset > 4) weekOffset = 4; // borne future raisonnable
+  renderWeekStrip();
+}
+
+function mondayOf(offsetWeeks){
+  const today = startOfDay(new Date());
+  const m = new Date(today);
+  m.setDate(today.getDate() - ((today.getDay()+6)%7) + offsetWeeks*7);
+  return m;
+}
+
+function renderWeekStrip(){
+  const strip = document.getElementById("weekStrip");
+  if(!strip) return;
+
+  const today = startOfDay(new Date());
+  const monday = mondayOf(weekOffset);
+  const isCurrentWeek = (weekOffset === 0);
+  const isFutureWeek = (weekOffset > 0);
+  const isPastWeek = (weekOffset < 0);
+
+  const label = document.getElementById("weekNavLabel");
+  if(label){
+    if(weekOffset===0) label.textContent = "Cette semaine";
+    else if(weekOffset===-1) label.textContent = "Semaine dernière";
+    else if(weekOffset===1) label.textContent = "Semaine prochaine";
+    else {
+      const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+      const f = d => d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
+      label.textContent = f(monday) + " – " + f(sunday);
+    }
+  }
+  const nextBtn = document.getElementById("weekNavNext");
+  if(nextBtn) nextBtn.disabled = (weekOffset >= 4);
+
+  // séances faites dans la semaine affichée
+  const doneByDay = {};
+  DB.history.forEach(h=>{
+    const d = startOfDay(new Date(h.date));
+    const idx = daysBetween(monday, d);
+    if(idx>=0 && idx<7){ doneByDay[idx] = h.session; }
+  });
+  const doneCount = Object.keys(doneByDay).length;
+
+  // recommandations (pointillé) : seulement semaine courante ou future
+  const recoDays = {};
+  const rotation = ["A","B","C"];
+  let letterCursor = rotation.indexOf(suggestedSession());
+
+  if(isCurrentWeek || isFutureWeek){
+    const todayIdx = daysBetween(monday, today); // <0 si semaine future
+    let projected = doneCount;
+    let cursor;
+    if(isFutureWeek){
+      cursor = 0; // semaine future : projection depuis lundi
+    } else {
+      cursor = todayIdx;
+      if(doneByDay[todayIdx]!=null) cursor = todayIdx + TIMING.idealGapDays;
+    }
+    while(cursor < 7 && projected < TIMING.weeklyTarget + 1){
+      if(cursor >= 0 && doneByDay[cursor]==null){
+        recoDays[cursor] = (projected < TIMING.weeklyTarget) ? "reco" : "bonus";
+        projected++;
+        cursor += TIMING.idealGapDays;
+      } else {
+        cursor += 1;
+      }
+    }
+  }
+
+  const dayLabels = ["L","M","M","J","V","S","D"];
+  let html = "";
+  for(let i=0;i<7;i++){
+    const isToday = isCurrentWeek && (i===daysBetween(monday, today));
+    const doneLetter = doneByDay[i];
+    let cellClass = "day-cell";
+    let content = `<span class="empty-dot"></span>`;
+    let label2 = "";
+
+    if(doneLetter){
+      cellClass += " done";
+      content = `<span class="done-letter">${doneLetter}</span>`;
+      label2 = `<span class="done-check">✓</span>`;
+    } else if(recoDays[i]){
+      cellClass += (recoDays[i]==="reco") ? " reco" : " reco-bonus";
+      content = rotation[letterCursor % 3];
+      letterCursor++;
+      label2 = `<span class="reco-label">${recoDays[i]==="bonus"?"bonus":""}</span>`;
+    }
+    if(isToday) cellClass += " today-ring";
+
+    html += `<div class="day-col">
+      <div class="day-head ${isToday?"today":""}">${dayLabels[i]}</div>
+      <div class="${cellClass}">${content}${label2}</div>
+    </div>`;
+  }
+  strip.innerHTML = html;
+
+  const txt = document.getElementById("weekProgressText");
+  if(txt){
+    const remaining = Math.max(0, TIMING.weeklyTarget - doneCount);
+    if(isPastWeek){
+      txt.innerHTML = doneCount>0
+        ? `<b>${doneCount}</b> séance(s) réalisée(s) cette semaine-là.`
+        : `Aucune séance cette semaine-là.`;
+    } else if(doneCount===0){
+      txt.innerHTML = isFutureWeek
+        ? `Projection : <b>${TIMING.weeklyTarget} séances</b> recommandées.`
+        : `Objectif : <b>${TIMING.weeklyTarget} séances</b> cette semaine.`;
+    } else if(remaining>0){
+      txt.innerHTML = `<b>${doneCount}/${TIMING.weeklyTarget}</b> séances · encore <b>${remaining}</b> pour l'objectif.`;
+    } else {
+      txt.innerHTML = `🎉 Objectif <b>${TIMING.weeklyTarget}/${TIMING.weeklyTarget}</b> atteint ! Séance(s) bonus en pointillé si tu as le temps.`;
+    }
+  }
 }
 
 function renderHistory(){
