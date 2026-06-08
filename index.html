@@ -183,6 +183,17 @@
   .phase-tag.main { background: rgba(232,255,71,.15); color: var(--accent); }
   .phase-tag.stretch { background: rgba(56,189,248,.15); color: var(--stretch); }
 
+  .set-badge {
+    align-self: flex-start; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: .05em;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .demo-btn {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600;
+    color: var(--stretch); background: rgba(56,189,248,.1); border: 1px solid rgba(56,189,248,.3);
+    border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: inherit;
+  }
+  .demo-btn:active { transform: scale(.94); }
+
   .exercise-name { font-family: 'Bebas Neue', sans-serif; font-size: 40px; line-height: .98; letter-spacing: .02em; }
   .exercise-target {
     font-size: 17px; color: var(--text); margin-top: 12px; font-weight: 500;
@@ -585,10 +596,10 @@ const PROGRAM = {
   B: {
     name:"Séance B", subtitle:"Pull + Biceps",
     main:[
-      { id:"b1", name:"Tractions pronation", kind:"reps", baseReps:5, sets:4, tags:["Grand dorsal","Biceps"], note:"Paumes vers l'avant. Monte la poitrine vers la barre, descente lente.|Moins de 3 reps propres ? Mets un élastique 20-30 kg en assistance sous les pieds." },
+      { id:"b1", name:"Tractions pronation", kind:"reps", baseReps:5, sets:4, tags:["Grand dorsal","Biceps"], demo:"traction pronation technique élastique barre", note:"Paumes vers l'avant, mains un peu plus larges que les épaules. Monte la poitrine vers la barre, descente lente et contrôlée.|Méthode (tu fais déjà quelques tractions) : commence chaque série par 1 traction complète propre, SANS aller à l'échec. Puis enchaîne avec l'élastique attaché à la barre (genou ou pied dedans) pour finir les reps. Garde toujours un peu de réserve : mieux vaut 1 complète à chaque série que 2 en série 1 puis plus rien.|En fin de série, si tu n'as plus de jus, termine par 1-2 négatives (monte avec une chaise, descends en 3-5s). Le marqueur de progrès : le nombre de complètes que tu fais en 1re série." },
       { id:"b2", name:"Rowing élastique debout", kind:"reps", baseReps:12, sets:3, baseResist:30, tags:["Dos moyen","Trapèzes"], note:"Élastique fixé bas, tire les coudes vers l'arrière en serrant les omoplates. Dos droit." },
-      { id:"b3", name:"Tractions supination (chin-up)", kind:"reps", baseReps:5, sets:3, tags:["Biceps","Dorsal"], note:"Paumes vers toi, mains largeur d'épaules. Plus facile que la pronation, accent biceps." },
-      { id:"b4", name:"Curl biceps (élastique)", kind:"reps", baseReps:15, sets:3, baseResist:20, tags:["Biceps"], note:"Pied au centre de l'élastique, coudes collés aux flancs, fléchis vers les épaules." },
+      { id:"b3", name:"Tractions supination (chin-up)", kind:"reps", baseReps:5, sets:3, tags:["Biceps","Dorsal"], demo:"chin up supination technique élastique", note:"Paumes vers toi, mains largeur d'épaules. Plus facile que la pronation car les biceps aident — c'est ton exercice le plus fort, donc celui où tu progresseras le plus vite.|Même approche : 1 (ou 2) traction complète propre en début de série en gardant de la réserve, puis l'élastique attaché à la barre pour compléter les reps. Ne crame pas tout en série 1.|C'est ici que tu passeras tes premiers caps : vise à gagner 1 complète en 1re série toutes les quelques semaines (de 3-4 vers 5, etc.)." },
+      { id:"b4", name:"Curl biceps (élastique)", kind:"reps", baseReps:15, sets:3, baseResist:20, tags:["Biceps"], demo:"curl biceps élastique", note:"Les deux pieds au centre de l'élastique, un poignet de chaque côté, fléchis les deux bras en même temps vers les épaules. Coudes collés aux flancs, ils ne bougent pas.|Faire les deux bras simultanément tend bien l'élastique et va plus vite — c'est la méthode recommandée. Tu peux aussi alterner un bras après l'autre (pied sur l'élastique) si tu préfères, le travail est équivalent." },
       { id:"b5", name:"Oiseau / rear delt (élastique)", kind:"reps", baseReps:15, sets:3, baseResist:10, tags:["Épaules arrière"], note:"Penché buste horizontal, élastique sous les pieds, écarte les bras. Essentiel pour la posture." },
       { id:"b6", name:"Superman", kind:"timed", dur:30, sets:3, tags:["Bas du dos","Fessiers"], note:"À plat ventre, bras tendus devant toi, jambes tendues. Décolle simultanément bras, poitrine et jambes du sol.|Position finale : maintiens la tenue (le chrono tourne), serre les fessiers, allonge-toi au maximum comme si on te tirait par les mains et les pieds. Garde le regard vers le sol pour ne pas casser la nuque. Monte juste assez pour sentir le bas du dos travailler, sans forcer la cambrure.|Respire pendant la tenue." }
     ]
@@ -743,29 +754,42 @@ function buildSteps(sessKey){
   const main = PROGRAM[sessKey].main;
   const stretch = STRETCHES[sessKey];
 
-  // échauffement : exo + courte pause (20s) entre, pas de pause après le dernier
+  // échauffement : 1 série chacun, courte pause (20s) entre exercices
   warm.forEach((ex,i)=>{
-    steps.push({type:"exercise", phase:"warm", ex});
+    pushExerciseSets(steps, ex, "warm", 15);
     if(i < warm.length-1) steps.push({type:"rest", phase:"warm", dur:20, nextName: warm[i+1].name});
   });
   // transition vers le corps de séance
   steps.push({type:"rest", phase:"warm", dur:30, nextName: main[0].name, transition:"Début du renforcement"});
 
-  // corps : chaque exo, pause 90s entre (60s pour exos en durée), pause après le dernier -> étirements
+  // corps : chaque exo déroulé série par série, pause inter-série courte,
+  // puis pause inter-exercice (90s / 60s pour les exos en durée)
   main.forEach((ex,i)=>{
-    steps.push({type:"exercise", phase:"main", ex});
+    const interSet = (ex.kind==="timed"||ex.kind==="hold-each-timed") ? 30 : 45;
+    pushExerciseSets(steps, ex, "main", interSet);
     const restDur = (ex.kind==="timed"||ex.kind==="hold-each-timed") ? 60 : 90;
     if(i < main.length-1) steps.push({type:"rest", phase:"main", dur:restDur, nextName: main[i+1].name});
   });
   steps.push({type:"rest", phase:"main", dur:30, nextName: stretch[0].name, transition:"Étirements"});
 
-  // étirements : exo + 10s entre
+  // étirements : 1 série chacun (les 2 côtés gérés dans l'exo), 10s entre
   stretch.forEach((ex,i)=>{
-    steps.push({type:"exercise", phase:"stretch", ex});
+    pushExerciseSets(steps, ex, "stretch", 10);
     if(i < stretch.length-1) steps.push({type:"rest", phase:"stretch", dur:10, nextName: stretch[i+1].name});
   });
 
   return steps;
+}
+
+// Déroule un exercice en N séries (steps) avec des pauses inter-séries entre elles.
+function pushExerciseSets(steps, ex, phase, interSetRest){
+  const nSets = ex.sets || 1;
+  for(let s=1; s<=nSets; s++){
+    steps.push({type:"exercise", phase, ex, setIndex:s, setTotal:nSets, lastSet:(s===nSets)});
+    if(s < nSets){
+      steps.push({type:"rest", phase, dur:interSetRest, isInterSet:true, nextName:ex.name, setComing:(s+1), setTotal:nSets});
+    }
+  }
 }
 
 /* =====================================================================
@@ -827,20 +851,39 @@ function renderStep(){
 }
 
 function fmtTarget(ex){
+  // cible d'UNE série (le déroulé série par série est géré par les steps)
   const reps = computedReps(ex);
   const resist = computedResist(ex);
   let main;
   if(ex.kind==="timed"){
-    main = `<b>${ex.sets?ex.sets+" × ":""}${reps}s</b>`;
+    main = `<b>${reps}s</b>`;
   } else if(ex.kind==="hold-each-timed"){
-    main = `<b>${ex.sets?ex.sets+" × ":""}${reps}s</b> par côté`;
+    main = `<b>${reps}s</b> par côté`;
   } else if(ex.kind==="hold-each"){
-    main = `<b>${ex.sets?ex.sets+" × ":""}${reps}</b> par jambe`;
+    main = `<b>${reps}</b> par jambe`;
   } else {
-    main = `<b>${ex.sets?ex.sets+" × ":""}${reps}</b> reps`;
+    main = `<b>${reps}</b> reps`;
   }
   if(resist) main += ` · <span class="resist">${resist} kg</span>`;
   return main;
+}
+
+// URL de démonstration vidéo (YouTube) pour un exercice
+function demoUrl(ex){
+  const q = (ex.demo || ex.name).replace(/\(.*?\)/g, "").trim() + " technique exercice";
+  return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+}
+function openDemo(exId){
+  const ex = exById(exId);
+  if(!ex) return;
+  try { window.open(demoUrl(ex), "_blank"); } catch(e){}
+}
+
+function setBadge(step){
+  if(step.setTotal && step.setTotal>1){
+    return `<div class="set-badge">Série ${step.setIndex} / ${step.setTotal}</div>`;
+  }
+  return "";
 }
 
 function renderExercise(step){
@@ -851,19 +894,20 @@ function renderExercise(step){
   const tagClass = phaseTagClass(step.phase);
   const showDiff = (step.phase==="main"); // feedback seulement sur le corps de séance
   const curSignal = SES.exFeedback.find(f=>f.exId===ex.id)?.signal;
+  const demoBtn = `<button class="demo-btn" onclick="openDemo('${ex.id}')">▶ Voir la démo</button>`;
 
   const c = document.getElementById("sessContent");
 
   if(isTimed){
-    // exercice chronométré : grand timer
     const reps = computedReps(ex);
     const perSide = (ex.kind==="hold-each-timed");
     c.innerHTML = `
       <div class="sess-body">
         <div class="phase-tag ${tagClass}">${phaseName(step.phase)}</div>
+        ${setBadge(step)}
         <div class="exercise-name">${ex.name}</div>
         <div class="exercise-target">${fmtTarget(ex)}</div>
-        <div class="exercise-tags">${(ex.tags||[]).map(t=>`<span class="ex-tag">${t}</span>`).join("")}</div>
+        <div class="exercise-tags">${(ex.tags||[]).map(t=>`<span class="ex-tag">${t}</span>`).join("")} ${demoBtn}</div>
         <div class="timer-stage">
           <div class="ring-wrap">
             <svg width="250" height="250" viewBox="0 0 250 250">
@@ -886,22 +930,21 @@ function renderExercise(step){
       <div class="sess-actions">
         <button class="btn-primary" id="exDoneBtn" onclick="exerciseDone()">${perSide?"Démarrer (côté 1)":"Lancer le chrono ▶"}</button>
       </div>`;
-    // pour les exos chronométrés on prépare un timer "à la demande" (l'utilisateur lance)
     setupTimedExercise(ex, perSide);
   } else {
-    // exercice en reps : validation manuelle
     const reps = computedReps(ex);
     c.innerHTML = `
       <div class="sess-body">
         <div class="phase-tag ${tagClass}">${phaseName(step.phase)}</div>
+        ${setBadge(step)}
         <div class="exercise-name">${ex.name}</div>
         <div class="exercise-target">${fmtTarget(ex)}</div>
-        <div class="exercise-tags">${(ex.tags||[]).map(t=>`<span class="ex-tag">${t}</span>`).join("")}</div>
+        <div class="exercise-tags">${(ex.tags||[]).map(t=>`<span class="ex-tag">${t}</span>`).join("")} ${demoBtn}</div>
         <div class="exercise-note"><span class="nl">Technique</span>${noteHtml}</div>
         ${showDiff?diffBlock(curSignal):""}
       </div>
       <div class="sess-actions">
-        <button class="btn-primary" onclick="exerciseDone()">Fait ✓</button>
+        <button class="btn-primary" onclick="exerciseDone()">${step.lastSet?"Fait ✓":"Série faite →"}</button>
       </div>`;
   }
 }
@@ -943,11 +986,19 @@ function advance(){
 
 /* ---------- REST step (auto countdown) ---------- */
 
-let timer = { id:null, remaining:0, total:0, running:false, mode:"rest", onDone:null, phase:"side1", ex:null, endAt:null, started:false, finishedTimed:false };
+let timer = { rafId:null, heartId:null, remaining:0, total:0, running:false, mode:"rest", onDone:null, phase:"side1", ex:null, endAt:null, started:false, finishedTimed:false, perSide:false, side:1, armed:false };
 
 function renderRest(step){
   const c = document.getElementById("sessContent");
   const transition = step.transition ? `<div class="ring-caption" style="color:var(--accent);font-weight:600;margin-bottom:4px;">${step.transition}</div>` : "";
+  // Libellé "Ensuite" : pour une pause inter-série on précise le n° de la série à venir
+  let nextLine;
+  if(step.isInterSet){
+    nextLine = `<div class="ring-next">Série <b>${step.setComing}/${step.setTotal}</b> · ${step.nextName||""}</div>`;
+  } else {
+    nextLine = `<div class="ring-next">Ensuite : <b>${step.nextName||"—"}</b></div>`;
+  }
+  const restCaption = step.isInterSet ? "Repos entre séries" : "Repos";
   c.innerHTML = `
     <div class="sess-body">
       <div class="phase-tag ${phaseTagClass(step.phase)}">Récupération</div>
@@ -959,11 +1010,11 @@ function renderRest(step){
           </svg>
           <div class="ring-center">
             <div class="ring-time" id="ringTime">${fmtClock(step.dur)}</div>
-            <div class="ring-caption">Repos</div>
+            <div class="ring-caption">${restCaption}</div>
           </div>
         </div>
         ${transition}
-        <div class="ring-next">Ensuite : <b>${step.nextName||"—"}</b></div>
+        ${nextLine}
         <div class="timer-adjust">
           <button class="ta-btn" onclick="timerAdd(-15)">−15s</button>
           <button class="ta-btn pause" id="ringPause" onclick="timerToggle()">⏸ Pause</button>
@@ -972,7 +1023,7 @@ function renderRest(step){
       </div>
     </div>
     <div class="sess-actions">
-      <button class="btn-primary" onclick="skipRest()">Passer le repos →</button>
+      <button class="btn-primary" onclick="skipRest()">${step.isInterSet?"Série suivante →":"Passer le repos →"}</button>
     </div>`;
   startCountdown(step.dur, "rest", ()=>{ advance(); });
 }
@@ -1025,7 +1076,12 @@ function startTimedRun(){
   });
 }
 
-/* ---------- generic countdown (timestamp-based) ---------- */
+/* ---------- moteur de décompte (timestamp + double pilotage) ----------
+   Robustesse : on rafraîchit l'affichage via requestAnimationFrame ET via
+   un setInterval de secours. Si l'un des deux est bridé par le navigateur
+   (throttling mobile, onglet en arrière-plan…), l'autre prend le relais.
+   La source de vérité est toujours endAt (horloge), donc l'affichage reste
+   juste même si un tick saute. */
 
 function startCountdown(seconds, mode, onDone){
   stopTimer();
@@ -1037,32 +1093,48 @@ function startCountdown(seconds, mode, onDone){
   timer.finishedTimed = false;
   timer.endAt = Date.now() + seconds*1000;
   initRing(mode);
-  // Petit décalage pour que la transition CSS du ring parte de "plein"
-  // puis s'anime immédiatement vers la valeur courante.
-  updateRing(true);
   const pauseBtn = document.getElementById("ringPause");
   if(pauseBtn) pauseBtn.textContent = "⏸ Pause";
-  // boucle fréquente (200ms) : le décompte visuel bouge tout de suite,
-  // et l'affichage reste précis même si un tick est sauté.
-  timer.id = setInterval(tickLoop, 200);
+  syncTimer();      // affichage immédiat
+  startDrivers();   // rAF + intervalle de secours
 }
 
-function tickLoop(){
-  if(!timer.running || timer.endAt==null) return;
+function startDrivers(){
+  stopDrivers();
+  // 1) requestAnimationFrame : rafraîchissement fluide quand l'app est au 1er plan
+  const rafStep = () => {
+    if(!timer.running) return;
+    syncTimer();
+    if(timer.running) timer.rafId = requestAnimationFrame(rafStep);
+  };
+  try { timer.rafId = requestAnimationFrame(rafStep); } catch(e){ timer.rafId = null; }
+  // 2) intervalle de secours : garantit le décompte même si rAF est bridé
+  timer.heartId = setInterval(() => { if(timer.running) syncTimer(); }, 250);
+}
+
+function stopDrivers(){
+  if(timer.rafId){ try { cancelAnimationFrame(timer.rafId); } catch(e){} timer.rafId = null; }
+  if(timer.heartId){ clearInterval(timer.heartId); timer.heartId = null; }
+}
+
+// Recalcule le temps restant depuis l'horloge, met à jour l'affichage, gère la fin.
+function syncTimer(){
+  if(timer.endAt == null) return;
   const msLeft = timer.endAt - Date.now();
-  const secLeft = Math.max(0, Math.ceil(msLeft/1000));
-  timer.remaining = secLeft;
-  updateRing(false);
+  timer.remaining = Math.max(0, Math.ceil(msLeft/1000));
+  paintRing();
   if(msLeft <= 0){
-    clearInterval(timer.id); timer.id=null; timer.running=false; timer.endAt=null;
-    if(timer.mode==="rest") beep();
-    if(timer.onDone){ const cb=timer.onDone; timer.onDone=null; cb(); }
+    stopDrivers();
+    timer.running = false;
+    timer.endAt = null;
+    if(timer.mode === "rest") beep();
+    if(timer.onDone){ const cb = timer.onDone; timer.onDone = null; cb(); }
   }
 }
 
 function stopTimer(){
-  if(timer.id){ clearInterval(timer.id); timer.id=null; }
-  timer.running=false;
+  stopDrivers();
+  timer.running = false;
 }
 
 function initRing(mode){
@@ -1071,16 +1143,17 @@ function initRing(mode){
   const r = 115, circ = 2*Math.PI*r;
   ring.style.strokeDasharray = circ;
   ring.style.strokeDashoffset = 0;
-  ring.className = "ring-prog " + (mode==="timed"?"timed":"rest");
+  // NB: sur un élément SVG, .className est en lecture seule → on passe par setAttribute
+  ring.setAttribute("class", "ring-prog " + (mode==="timed"?"timed":"rest"));
 }
 
-function updateRing(isStart){
+// Peint le nombre + l'anneau d'après l'état courant (remaining/endAt/total).
+function paintRing(){
   const t = document.getElementById("ringTime");
   if(t) t.textContent = timer.mode==="timed" ? Math.max(0,timer.remaining) : fmtClock(Math.max(0,timer.remaining));
   const ring = document.getElementById("ringProg");
   if(ring){
     const r=115, circ=2*Math.PI*r;
-    // au démarrage on calcule la fraction sur le temps réel restant (millisecondes)
     let frac;
     if(timer.endAt!=null && timer.running){
       const msLeft = Math.max(0, timer.endAt - Date.now());
@@ -1094,7 +1167,7 @@ function updateRing(isStart){
 
 function timerToggle(){
   // Sur un exercice chronométré pas encore lancé, le bouton pause ne fait rien
-  // (le démarrage se fait via le bouton principal "C'est parti").
+  // (le démarrage se fait via le bouton principal).
   if(timer.mode==="timed" && !timer.started) return;
   if(timer.finishedTimed) return;
 
@@ -1103,17 +1176,16 @@ function timerToggle(){
     timer.running = true;
     timer.endAt = Date.now() + timer.remaining*1000;
     const pauseBtn=document.getElementById("ringPause"); if(pauseBtn) pauseBtn.textContent="⏸ Pause";
-    if(timer.id) clearInterval(timer.id);
-    timer.id = setInterval(tickLoop, 200);
-    updateRing(true);
+    syncTimer();
+    startDrivers();
   } else {
     // pause : figer le temps restant
-    const msLeft = timer.endAt - Date.now();
+    const msLeft = (timer.endAt!=null) ? (timer.endAt - Date.now()) : timer.remaining*1000;
     timer.remaining = Math.max(0, Math.ceil(msLeft/1000));
     stopTimer();
     timer.endAt = null;
     const pauseBtn=document.getElementById("ringPause"); if(pauseBtn) pauseBtn.textContent="▶ Reprendre";
-    updateRing(false);
+    paintRing();
   }
 }
 
@@ -1123,7 +1195,17 @@ function timerAdd(s){
   if(timer.running && timer.endAt!=null){
     timer.endAt = Date.now() + timer.remaining*1000;
   }
-  updateRing(false);
+  paintRing();
+}
+
+// Resynchronise à la reprise de l'app (l'onglet a pu être mis en arrière-plan).
+if(typeof document!=="undefined" && document.addEventListener){
+  document.addEventListener("visibilitychange", ()=>{
+    if(!document.hidden && timer.running && timer.endAt!=null){
+      startDrivers();
+      syncTimer();
+    }
+  });
 }
 
 function fmtClock(s){ const m=Math.floor(s/60), sec=s%60; return m>0 ? (m+":"+String(sec).padStart(2,"0")) : String(sec); }
@@ -1154,7 +1236,7 @@ function beep(){
   if(navigator.vibrate) navigator.vibrate([150,80,150]);
 }
 
-/* ---------- override exerciseDone to handle timed start ---------- */
+/* ---------- exerciseDone : gère séries, exos chronométrés et reps ---------- */
 function exerciseDone(){
   const step = currentStep();
   if(step.type!=="exercise"){ stopTimer(); advance(); return; }
@@ -1163,9 +1245,9 @@ function exerciseDone(){
   const isTimed = (ex.kind==="timed" || ex.kind==="hold-each-timed");
 
   if(isTimed){
-    // Terminé -> compter et avancer
+    // Terminé -> compter (1 fois, à la dernière série) et avancer
     if(timer.finishedTimed){
-      if(step.phase==="main") SES.doneExercises++;
+      if(step.phase==="main" && step.lastSet) SES.doneExercises++;
       stopTimer(); advance(); return;
     }
     // Timer en cours -> ignorer (l'utilisateur attend la fin ou met en pause)
@@ -1175,10 +1257,11 @@ function exerciseDone(){
     return;
   }
 
-  // Exercice en reps : validation manuelle directe
+  // Exercice en reps : validation manuelle d'une série
   if(step.phase==="main"){
-    SES.doneExercises++;
-    SES.totalReps += computedReps(ex) * (ex.sets||1) * (ex.kind==="hold-each"?2:1);
+    // volume : compté par série (les séries sont des steps distincts)
+    SES.totalReps += computedReps(ex) * (ex.kind==="hold-each"?2:1);
+    if(step.lastSet) SES.doneExercises++;
   }
   stopTimer(); advance();
 }
@@ -1234,10 +1317,11 @@ function estimateDuration(sessKey){
   steps.forEach(s=>{
     if(s.type==="rest") sec += s.dur;
     else {
+      // chaque step exercice = UNE série
       const ex = s.ex;
       if(ex.kind==="timed") sec += computedReps(ex)+5;
       else if(ex.kind==="hold-each-timed") sec += computedReps(ex)*2+10;
-      else sec += (ex.sets||1)*30; // estimation reps
+      else sec += 30; // ~30s pour une série en reps
     }
   });
   return Math.round(sec/60);
