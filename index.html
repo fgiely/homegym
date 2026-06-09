@@ -182,6 +182,7 @@
   .phase-tag.warm { background: rgba(251,191,36,.15); color: var(--warm); }
   .phase-tag.main { background: rgba(232,255,71,.15); color: var(--accent); }
   .phase-tag.stretch { background: rgba(56,189,248,.15); color: var(--stretch); }
+  .phase-tag.finisher { background: rgba(255,107,53,.15); color: var(--accent2); }
 
   .set-badge {
     align-self: flex-start; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: .05em;
@@ -639,6 +640,24 @@ const STRETCHES = {
   ]
 };
 
+// Finisher : court bloc en fin de séance (avant étirements).
+// Abdos à chaque séance (varié pour ne pas répéter) + pompes bonus.
+// Les pompes en B et C montent la fréquence pecs à ~3×/semaine.
+const FINISHER = {
+  A: [
+    { id:"fA1", name:"Mountain climbers", kind:"timed", dur:30, sets:2, tags:["Abdos","Cardio"], demo:"mountain climbers technique", note:"En position de pompe (bras tendus, corps gainé), ramène alternativement un genou puis l'autre vers la poitrine, à rythme soutenu.|Garde les hanches basses et le dos plat, ne lève pas les fesses. Le chrono tourne pendant l'effort." },
+    { id:"fA2", name:"Pompes (bonus)", kind:"reps", baseReps:10, sets:1, tags:["Pectoraux"], demo:"pompe technique", note:"Série bonus de pompes pour finir, autant que tu peux proprement (vise ~10). Passe sur les genoux si tu es déjà bien fatigué — l'important est de finir propre." }
+  ],
+  B: [
+    { id:"fB1", name:"Crunch bicyclette", kind:"timed", dur:30, sets:2, tags:["Abdos","Obliques"], demo:"crunch bicyclette vélo technique", note:"Allongé sur le dos, mains aux tempes, jambes en l'air. Amène alternativement coude vers le genou opposé en pédalant lentement.|La rotation vient du tronc, pas des bras. Ne tire pas sur la nuque. Le chrono tourne pendant l'effort." },
+    { id:"fB2", name:"Pompes (bonus)", kind:"reps", baseReps:10, sets:1, tags:["Pectoraux"], demo:"pompe technique", note:"Série bonus de pompes pour finir (et garder un travail régulier des pecs). Autant que tu peux proprement, sur les genoux si besoin." }
+  ],
+  C: [
+    { id:"fC1", name:"Relevés de jambes", kind:"reps", baseReps:12, sets:2, tags:["Abdos (bas)"], demo:"relevé de jambes allongé abdominaux", note:"Allongé sur le dos, mains sous les fesses pour caler le bassin, jambes tendues. Monte-les vers le plafond puis redescends lentement sans poser les talons.|Plie un peu les genoux si le bas du dos tire. Cible le bas des abdos." },
+    { id:"fC2", name:"Pompes (bonus)", kind:"reps", baseReps:10, sets:1, tags:["Pectoraux"], demo:"pompe technique", note:"Série bonus de pompes pour finir (et garder un travail régulier des pecs après la séance jambes). Autant que tu peux proprement, sur les genoux si besoin." }
+  ]
+};
+
 /* =====================================================================
    ÉTAT + PERSISTANCE (localStorage avec fallback mémoire)
    ===================================================================== */
@@ -737,7 +756,7 @@ function deloadCandidates(){
 
 function exById(id){
   for(const k of ["A","B","C"]){
-    const all = [...WARMUPS[k], ...PROGRAM[k].main, ...STRETCHES[k]];
+    const all = [...WARMUPS[k], ...PROGRAM[k].main, ...(FINISHER[k]||[]), ...STRETCHES[k]];
     const f = all.find(e=>e.id===id);
     if(f) return f;
   }
@@ -771,7 +790,20 @@ function buildSteps(sessKey){
     const restDur = (ex.kind==="timed"||ex.kind==="hold-each-timed") ? 60 : 90;
     if(i < main.length-1) steps.push({type:"rest", phase:"main", dur:restDur, nextName: main[i+1].name});
   });
-  steps.push({type:"rest", phase:"main", dur:30, nextName: stretch[0].name, transition:"Étirements"});
+
+  // finisher : court bloc abdos + pompes bonus
+  const finisher = FINISHER[sessKey] || [];
+  if(finisher.length){
+    steps.push({type:"rest", phase:"main", dur:30, nextName: finisher[0].name, transition:"Finisher"});
+    finisher.forEach((ex,i)=>{
+      const interSet = (ex.kind==="timed"||ex.kind==="hold-each-timed") ? 25 : 40;
+      pushExerciseSets(steps, ex, "finisher", interSet);
+      if(i < finisher.length-1) steps.push({type:"rest", phase:"finisher", dur:30, nextName: finisher[i+1].name});
+    });
+    steps.push({type:"rest", phase:"finisher", dur:25, nextName: stretch[0].name, transition:"Étirements"});
+  } else {
+    steps.push({type:"rest", phase:"main", dur:30, nextName: stretch[0].name, transition:"Étirements"});
+  }
 
   // étirements : 1 série chacun (les 2 côtés gérés dans l'exo), 10s entre
   stretch.forEach((ex,i)=>{
@@ -819,8 +851,8 @@ function newSession(sessKey){
   };
 }
 
-function phaseName(p){ return p==="warm"?"Échauffement":p==="stretch"?"Étirements":"Renforcement"; }
-function phaseTagClass(p){ return p==="warm"?"warm":p==="stretch"?"stretch":"main"; }
+function phaseName(p){ return p==="warm"?"Échauffement":p==="stretch"?"Étirements":p==="finisher"?"Finisher":"Renforcement"; }
+function phaseTagClass(p){ return p==="warm"?"warm":p==="stretch"?"stretch":p==="finisher"?"finisher":"main"; }
 
 function countMainExercises(){ return PROGRAM[SES.sessKey].main.length; }
 
@@ -893,7 +925,7 @@ function renderExercise(step){
   const noteParts = (ex.note||"").split("|");
   const noteHtml = noteParts.map(p=>`<div>${p}</div>`).join("");
   const tagClass = phaseTagClass(step.phase);
-  const showDiff = (step.phase==="main"); // feedback seulement sur le corps de séance
+  const showDiff = (step.phase==="main" || step.phase==="finisher"); // feedback sur corps + finisher
   const curSignal = SES.exFeedback.find(f=>f.exId===ex.id)?.signal;
   const demoBtn = `<button class="demo-btn" onclick="openDemo('${ex.id}')">▶ Voir la démo</button>`;
 
@@ -1248,7 +1280,7 @@ function exerciseDone(){
   if(isTimed){
     // Terminé -> compter (1 fois, à la dernière série) et avancer
     if(timer.finishedTimed){
-      if(step.phase==="main" && step.lastSet) SES.doneExercises++;
+      if((step.phase==="main"||step.phase==="finisher") && step.lastSet) SES.doneExercises++;
       stopTimer(); advance(); return;
     }
     // Timer en cours -> ignorer (l'utilisateur attend la fin ou met en pause)
@@ -1259,7 +1291,7 @@ function exerciseDone(){
   }
 
   // Exercice en reps : validation manuelle d'une série
-  if(step.phase==="main"){
+  if(step.phase==="main" || step.phase==="finisher"){
     // volume : compté par série (les séries sont des steps distincts)
     SES.totalReps += computedReps(ex) * (ex.kind==="hold-each"?2:1);
     if(step.lastSet) SES.doneExercises++;
@@ -1279,14 +1311,16 @@ function openPreview(sessKey){
   document.getElementById("pvTitle").textContent = P.name + " — " + P.subtitle;
 
   const warm = WARMUPS[sessKey], main = P.main, stretch = STRETCHES[sessKey];
+  const finisher = FINISHER[sessKey] || [];
   // durée estimée
   const est = estimateDuration(sessKey);
-  document.getElementById("pvMeta").textContent = `${main.length} exercices · échauffement + étirements · ~${est} min`;
+  document.getElementById("pvMeta").textContent = `${main.length} exercices + finisher · échauffement & étirements · ~${est} min`;
 
   const list = document.getElementById("pvList");
   list.innerHTML =
     phaseSection("Échauffement", "var(--warm)", warm) +
     phaseSection("Renforcement", "var(--accent)", main) +
+    (finisher.length ? phaseSection("Finisher", "var(--accent2)", finisher) : "") +
     phaseSection("Étirements", "var(--stretch)", stretch);
   nav("preview");
 }
