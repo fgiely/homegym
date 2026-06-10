@@ -602,7 +602,7 @@ const PROGRAM = {
     main:[
       { id:"a1", name:"Pompes classiques", kind:"reps", baseReps:8, sets:3, tags:["Poitrine","Triceps"], note:"Mains un peu plus larges que les épaules, corps gainé.|Trop facile : pieds surélevés. Trop dur : genoux au sol." },
       { id:"a2", name:"Développé épaules assis (élastique)", kind:"reps", baseReps:12, sets:3, baseResist:20, tags:["Épaules"], note:"Assis au sol, élastique passé sous les fesses, pousse les poings vers le haut.|Alternative sans élastique : pike push-ups (fesses hautes, tête vers le sol)." },
-      { id:"a3", name:"Pompes serrées (triceps)", kind:"reps", baseReps:8, sets:3, tags:["Triceps"], note:"Mains rapprochées sous la poitrine, coudes le long du corps à la descente." },
+      { id:"a3d", name:"Dips sur chaise", kind:"reps", baseReps:10, sets:3, tags:["Triceps"], demo:"dips sur chaise banc triceps technique", note:"Assis au bord d'une chaise stable (ou du canapé), mains agrippées au bord de chaque côté des hanches. Avance les fesses dans le vide, jambes pliées, pieds à plat.|Descends en pliant les coudes (pointés vers l'arrière, pas écartés) jusqu'à ~90°, puis remonte en poussant. Épaules basses et loin des oreilles, buste qui reste proche de la chaise. Si l'avant de l'épaule tire, ne descends pas aussi bas.|Réglage de difficulté : jambes plus pliées = plus facile · jambes tendues = plus dur · pieds surélevés = encore plus dur. C'est ta progression vers les pompes serrées, qu'on réintroduira quand les dips jambes tendues seront faciles." },
       { id:"a4", name:"Élévations latérales (élastique)", kind:"reps", baseReps:15, sets:3, baseResist:10, tags:["Épaules lat."], note:"Pied sur l'élastique, monte les bras sur les côtés jusqu'à l'horizontale, coudes légèrement fléchis." },
       { id:"a5", name:"Gainage planche", kind:"timed", dur:30, sets:3, tags:["Core"], note:"Avant-bras au sol (coudes sous les épaules), pointes de pieds, corps en une seule ligne droite des talons à la tête.|Position finale : serre les abdos et les fessiers, ne laisse pas le bassin s'affaisser ni se cambrer. Pousse activement le sol avec les avant-bras, regard vers le sol. Si le bas du dos creuse, rentre légèrement le bassin.|Le chrono tourne pendant la tenue." },
       { id:"a6", name:"Crunchs", kind:"reps", baseReps:15, sets:3, tags:["Abdos (haut)"], demo:"crunch abdominaux technique", note:"Allongé sur le dos, genoux pliés, PIEDS POSÉS au sol. Mains sur les tempes (sans tirer sur la nuque).|Décolle seulement les épaules et le haut du dos en enroulant le buste et en soufflant. Le bas du dos reste au sol. Redescends sans poser complètement la tête entre les reps.|Cible le haut des abdominaux. Mouvement contrôlé, pas de à-coups." },
@@ -754,6 +754,7 @@ function sessionLevel(sessKey){
 }
 
 // detection deload : un exercice marqué 'hard' lors des 2 dernières séances qui le contiennent
+// (uniquement les exercices encore présents dans le programme)
 function deloadCandidates(){
   const recent = DB.history.slice(-6); // fenêtre
   const counts = {};
@@ -764,8 +765,22 @@ function deloadCandidates(){
     });
   });
   const out = [];
-  Object.keys(counts).forEach(id=>{ if(counts[id]>=2) out.push(id); });
+  Object.keys(counts).forEach(id=>{ if(counts[id]>=2 && isActiveExercise(id)) out.push(id); });
   return out;
+}
+
+// Exercices retirés du programme : les anciens retours/ajustements peuvent
+// encore y faire référence dans l'historique et le bilan exporté.
+const LEGACY_EXERCISES = {
+  a3: { name: "Pompes serrées (remplacées par les dips sur chaise)" }
+};
+
+function isActiveExercise(id){
+  for(const k of ["A","B","C"]){
+    const all = [...WARMUPS[k], ...PROGRAM[k].main, ...(FINISHER[k]||[]), ...STRETCHES[k]];
+    if(all.some(e=>e.id===id)) return true;
+  }
+  return false;
 }
 
 function exById(id){
@@ -774,7 +789,7 @@ function exById(id){
     const f = all.find(e=>e.id===id);
     if(f) return f;
   }
-  return null;
+  return LEGACY_EXERCISES[id] || null;
 }
 
 /* =====================================================================
