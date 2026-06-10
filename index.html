@@ -149,6 +149,19 @@
   .pv-item .pvtg { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .pv-item .pvr { font-size: 12px; color: var(--accent); font-weight: 600; white-space: nowrap; }
 
+  /* choix de mode Express/Complète */
+  .mode-pick { display: flex; gap: 10px; margin: 14px 0 6px; }
+  .mode-card {
+    flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 13px 14px; cursor: pointer; transition: all .15s;
+  }
+  .mode-card:active { transform: scale(.97); }
+  .mode-card.sel { border-color: var(--accent); background: rgba(232,255,71,.07); }
+  .mode-card .mc-name { font-weight: 700; font-size: 13px; }
+  .mode-card.sel .mc-name { color: var(--accent); }
+  .mode-card .mc-dur { font-family: 'Bebas Neue', sans-serif; font-size: 24px; margin-top: 2px; line-height: 1; }
+  .mode-card .mc-desc { font-size: 10px; color: var(--muted); margin-top: 5px; line-height: 1.45; }
+
   /* ============ GUIDED SESSION ============ */
   #screen-session { padding: 0; display: none; }
   #screen-session.active { display: block; }
@@ -484,6 +497,7 @@
       <div style="font-size:12px;color:var(--muted);" id="pvMeta"></div>
     </div>
   </div>
+  <div class="mode-pick" id="modePick"></div>
   <div class="preview-list" id="pvList"></div>
   <div style="margin-top:20px;"><button class="btn-primary" onclick="launchSession()">Démarrer la séance guidée →</button></div>
 </div>
@@ -768,11 +782,14 @@ function exById(id){
    step types : 'exercise' | 'rest'
    ===================================================================== */
 
-function buildSteps(sessKey){
+function buildSteps(sessKey, mode){
   const steps = [];
+  mode = mode || "complete";
+  const express = (mode === "express");
   const warm = WARMUPS[sessKey];
   const main = PROGRAM[sessKey].main;
-  const stretch = STRETCHES[sessKey];
+  // express : on garde les 2 étirements les plus importants seulement
+  const stretch = express ? STRETCHES[sessKey].slice(0,2) : STRETCHES[sessKey];
 
   // échauffement : 1 série chacun, courte pause (20s) entre exercices
   warm.forEach((ex,i)=>{
@@ -782,16 +799,20 @@ function buildSteps(sessKey){
   // transition vers le corps de séance
   steps.push({type:"rest", phase:"warm", dur:30, nextName: main[0].name, transition:"Début du renforcement"});
 
-  // corps : chaque exo déroulé série par série, pause inter-série courte,
-  // puis pause inter-exercice (90s / 60s pour les exos en durée)
+  // corps : chaque exo déroulé série par série.
+  // express : max 2 séries par exercice + repos raccourcis.
+  const interSetReps  = express ? 30 : 45;
+  const interSetTimed = express ? 25 : 30;
+  const interExReps   = express ? 60 : 90;
+  const interExTimed  = express ? 45 : 60;
   main.forEach((ex,i)=>{
-    const interSet = (ex.kind==="timed"||ex.kind==="hold-each-timed") ? 30 : 45;
-    pushExerciseSets(steps, ex, "main", interSet);
-    const restDur = (ex.kind==="timed"||ex.kind==="hold-each-timed") ? 60 : 90;
-    if(i < main.length-1) steps.push({type:"rest", phase:"main", dur:restDur, nextName: main[i+1].name});
+    const isTimedKind = (ex.kind==="timed"||ex.kind==="hold-each-timed");
+    const nSets = express ? Math.min(ex.sets||1, 2) : (ex.sets||1);
+    pushExerciseSets(steps, ex, "main", isTimedKind?interSetTimed:interSetReps, nSets);
+    if(i < main.length-1) steps.push({type:"rest", phase:"main", dur:(isTimedKind?interExTimed:interExReps), nextName: main[i+1].name});
   });
 
-  // finisher : court bloc abdos + pompes bonus
+  // finisher : court bloc abdos + pompes bonus (déjà court, identique dans les deux modes)
   const finisher = FINISHER[sessKey] || [];
   if(finisher.length){
     steps.push({type:"rest", phase:"main", dur:30, nextName: finisher[0].name, transition:"Finisher"});
@@ -815,8 +836,8 @@ function buildSteps(sessKey){
 }
 
 // Déroule un exercice en N séries (steps) avec des pauses inter-séries entre elles.
-function pushExerciseSets(steps, ex, phase, interSetRest){
-  const nSets = ex.sets || 1;
+function pushExerciseSets(steps, ex, phase, interSetRest, setsOverride){
+  const nSets = (setsOverride != null) ? setsOverride : (ex.sets || 1);
   for(let s=1; s<=nSets; s++){
     steps.push({type:"exercise", phase, ex, setIndex:s, setTotal:nSets, lastSet:(s===nSets)});
     if(s < nSets){
@@ -838,10 +859,12 @@ function suggestedSession(){
   return order[(order.indexOf(last)+1)%3];
 }
 
-function newSession(sessKey){
+function newSession(sessKey, mode){
+  mode = mode || "complete";
   return {
     sessKey,
-    steps: buildSteps(sessKey),
+    mode,
+    steps: buildSteps(sessKey, mode),
     idx: 0,
     startTime: Date.now(),
     exFeedback: [],     // {exId, signal}
@@ -873,7 +896,7 @@ function renderStep(){
   const step = currentStep();
   if(!step){ goToFinish(); return; }
 
-  document.getElementById("sessTitle").textContent = PROGRAM[SES.sessKey].name + " — " + PROGRAM[SES.sessKey].subtitle;
+  document.getElementById("sessTitle").textContent = PROGRAM[SES.sessKey].name + " — " + PROGRAM[SES.sessKey].subtitle + (SES.mode==="express" ? " · Express" : "");
   document.getElementById("sessPhase").textContent = phaseName(step.phase);
   document.getElementById("sessStepCount").textContent = (SES.idx+1) + " / " + SES.steps.length;
   renderProgressBar();
@@ -1304,67 +1327,98 @@ function exerciseDone(){
    ===================================================================== */
 
 let previewKey = null;
+let previewMode = "complete"; // dernier mode utilisé, restauré dans init()
 
 function openPreview(sessKey){
   previewKey = sessKey;
   const P = PROGRAM[sessKey];
   document.getElementById("pvTitle").textContent = P.name + " — " + P.subtitle;
-
-  const warm = WARMUPS[sessKey], main = P.main, stretch = STRETCHES[sessKey];
-  const finisher = FINISHER[sessKey] || [];
-  // durée estimée
-  const est = estimateDuration(sessKey);
-  document.getElementById("pvMeta").textContent = `${main.length} exercices + finisher · échauffement & étirements · ~${est} min`;
-
-  const list = document.getElementById("pvList");
-  list.innerHTML =
-    phaseSection("Échauffement", "var(--warm)", warm) +
-    phaseSection("Renforcement", "var(--accent)", main) +
-    (finisher.length ? phaseSection("Finisher", "var(--accent2)", finisher) : "") +
-    phaseSection("Étirements", "var(--stretch)", stretch);
+  document.getElementById("pvMeta").textContent = `${P.main.length} exercices + finisher · échauffement & étirements`;
+  renderPreviewBody();
   nav("preview");
 }
 
-function phaseSection(label, color, exos){
+function renderPreviewBody(){
+  const sessKey = previewKey;
+  const P = PROGRAM[sessKey];
+  const estC = estimateDuration(sessKey, "complete");
+  const estE = estimateDuration(sessKey, "express");
+  const express = (previewMode === "express");
+
+  // cartes de choix de mode
+  const mp = document.getElementById("modePick");
+  mp.innerHTML = `
+    <div class="mode-card ${!express?"sel":""}" onclick="setMode('complete')">
+      <div class="mc-name">Complète</div>
+      <div class="mc-dur">~${estC} min</div>
+      <div class="mc-desc">3-4 séries par exercice. La séance de référence.</div>
+    </div>
+    <div class="mode-card ${express?"sel":""}" onclick="setMode('express')">
+      <div class="mc-name">Express</div>
+      <div class="mc-dur">~${estE} min</div>
+      <div class="mc-desc">2 séries par exercice, repos raccourcis. Idéal en rythme quotidien.</div>
+    </div>`;
+
+  const warm = WARMUPS[sessKey], main = P.main;
+  const stretch = express ? STRETCHES[sessKey].slice(0,2) : STRETCHES[sessKey];
+  const finisher = FINISHER[sessKey] || [];
+  const list = document.getElementById("pvList");
+  list.innerHTML =
+    phaseSection("Échauffement", "var(--warm)", warm) +
+    phaseSection("Renforcement", "var(--accent)", main, express ? 2 : null) +
+    (finisher.length ? phaseSection("Finisher", "var(--accent2)", finisher) : "") +
+    phaseSection("Étirements", "var(--stretch)", stretch);
+}
+
+function setMode(m){
+  previewMode = m;
+  rawSet("homegym_v2_mode", m);
+  renderPreviewBody();
+}
+
+function phaseSection(label, color, exos, capSets){
   let html = `<div class="pv-phase-label"><span class="pd" style="background:${color}"></span>${label}</div>`;
   exos.forEach((ex,i)=>{
     html += `<div class="pv-item">
       <div class="pvn">${i+1}</div>
       <div class="pvb"><div class="pvt">${ex.name}</div><div class="pvtg">${(ex.tags||[]).join(" · ")}</div></div>
-      <div class="pvr">${pvTargetShort(ex)}</div>
+      <div class="pvr">${pvTargetShort(ex, capSets)}</div>
     </div>`;
   });
   return html;
 }
-function pvTargetShort(ex){
+function pvTargetShort(ex, capSets){
   const reps = computedReps(ex);
   const resist = computedResist(ex);
+  const sets = ex.sets ? (capSets ? Math.min(ex.sets, capSets) : ex.sets) : null;
   let s;
-  if(ex.kind==="timed"||ex.kind==="hold-each-timed") s = (ex.sets?ex.sets+"×":"")+reps+"s";
-  else s = (ex.sets?ex.sets+"×":"")+reps;
+  if(ex.kind==="timed"||ex.kind==="hold-each-timed") s = (sets?sets+"×":"")+reps+"s";
+  else s = (sets?sets+"×":"")+reps;
   if(resist) s += " · "+resist+"kg";
   return s;
 }
 
-function estimateDuration(sessKey){
-  const steps = buildSteps(sessKey);
+// Estimation calibrée sur les durées réelles observées :
+// série en reps ~45s, par jambe ~70s (2 côtés), +15s d'installation
+// au 1er passage sur chaque exercice (lecture, mise en place élastique).
+function estimateDuration(sessKey, mode){
+  const steps = buildSteps(sessKey, mode);
   let sec = 0;
   steps.forEach(s=>{
-    if(s.type==="rest") sec += s.dur;
-    else {
-      // chaque step exercice = UNE série
-      const ex = s.ex;
-      if(ex.kind==="timed") sec += computedReps(ex)+5;
-      else if(ex.kind==="hold-each-timed") sec += computedReps(ex)*2+10;
-      else sec += 30; // ~30s pour une série en reps
-    }
+    if(s.type==="rest"){ sec += s.dur; return; }
+    const ex = s.ex;
+    if(s.setIndex===1) sec += 15; // installation / lecture de l'exercice
+    if(ex.kind==="timed") sec += computedReps(ex)+8;
+    else if(ex.kind==="hold-each-timed") sec += computedReps(ex)*2+15;
+    else if(ex.kind==="hold-each") sec += 70;
+    else sec += 45;
   });
   return Math.round(sec/60);
 }
 
 function launchSession(){
   unlockAudio();
-  SES = newSession(previewKey);
+  SES = newSession(previewKey, previewMode);
   showChrome(false);
   nav("session");
   renderStep();
@@ -1383,7 +1437,7 @@ function confirmQuitSession(){
 }
 
 function saveActive(){
-  if(SES) rawSet(SESSION_KEY, JSON.stringify({sessKey:SES.sessKey, idx:SES.idx, startTime:SES.startTime, exFeedback:SES.exFeedback, doneExercises:SES.doneExercises, totalReps:SES.totalReps}));
+  if(SES) rawSet(SESSION_KEY, JSON.stringify({sessKey:SES.sessKey, mode:SES.mode, idx:SES.idx, startTime:SES.startTime, exFeedback:SES.exFeedback, doneExercises:SES.doneExercises, totalReps:SES.totalReps}));
 }
 function clearActive(){ rawDel(SESSION_KEY); }
 function loadActive(){
@@ -1394,7 +1448,7 @@ function loadActive(){
 function resumeSession(){
   const a = loadActive();
   if(!a) return;
-  SES = newSession(a.sessKey);
+  SES = newSession(a.sessKey, a.mode || "complete");
   SES.idx = Math.min(a.idx, SES.steps.length-1);
   SES.startTime = a.startTime || Date.now();
   SES.exFeedback = a.exFeedback || [];
@@ -1418,7 +1472,7 @@ function goToFinish(){
   const easyCount = SES.exFeedback.filter(f=>f.signal==="easy").length;
 
   // comparaison dernière séance même type
-  const prevSame = [...DB.history].reverse().find(h=>h.session===SES.sessKey);
+  const prevSame = [...DB.history].reverse().find(h=>h.session===SES.sessKey && (h.mode||"complete")===(SES.mode||"complete"));
   let cmp = "";
   if(prevSame){
     const diff = durMin - prevSame.durationMin;
@@ -1488,6 +1542,7 @@ function commitSession(){
     // enregistrer dans l'historique
     DB.history.push({
       session: SES.sessKey,
+      mode: SES.mode || "complete",
       date: new Date().toISOString(),
       durationMin: durMin,
       feel: finishFeel,
@@ -1533,7 +1588,7 @@ function renderDashboard(){
   const next = suggestedSession();
   const P = PROGRAM[next];
   document.getElementById("nextTitle").textContent = P.name;
-  document.getElementById("nextSub").innerHTML = P.subtitle + ` · <b>${P.main.length} exercices</b> · ~${estimateDuration(next)} min`;
+  document.getElementById("nextSub").innerHTML = P.subtitle + ` · <b>${P.main.length} exercices</b> · ~${estimateDuration(next,"complete")} min (express ~${estimateDuration(next,"express")})`;
 
   const now = new Date();
   const ws = new Date(now); ws.setDate(now.getDate()-((now.getDay()+6)%7)); ws.setHours(0,0,0,0);
@@ -1550,7 +1605,7 @@ function renderDashboard(){
   const a = loadActive();
   const slot = document.getElementById("resumeSlot");
   if(a && (a.idx||0) > 0){
-    const steps = buildSteps(a.sessKey);
+    const steps = buildSteps(a.sessKey, a.mode || "complete");
     const total = steps.length;
     slot.innerHTML = `<div class="resume-banner">
       <div class="ri">⏯️</div>
@@ -1567,7 +1622,7 @@ function renderDashboard(){
 /* ---------- Reco de timing & planning hebdo ---------- */
 
 // Constantes de rythme (1 jour sur 2 visé)
-const TIMING = { idealGapDays: 2, minGapDays: 1, lateDays: 5, weeklyTarget: 3 };
+const TIMING = { minGapDays: 1, lateDays: 5, weeklyTarget: 5 };
 
 function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
 function daysBetween(a,b){ return Math.round((startOfDay(b)-startOfDay(a))/86400000); }
@@ -1592,25 +1647,17 @@ function renderTimingReco(){
   const gap = daysBetween(last, now); // jours écoulés depuis la dernière séance
   const nextLetter = suggestedSession();
 
-  // jour optimal = dernière + 2 jours ; possible dès dernière + 1 jour
-  const idealDate = new Date(startOfDay(last).getTime() + TIMING.idealGapDays*86400000);
-  const possibleDate = new Date(startOfDay(last).getTime() + TIMING.minGapDays*86400000);
-  const fmtDay = d => d.toLocaleDateString("fr-FR",{weekday:"long"});
-
   if(gap <= 0){
     // séance faite aujourd'hui
     el.className = "timing-reco early";
-    el.innerHTML = `<span class="ti">🛌</span><div>Séance faite aujourd'hui. Repos conseillé — prochaine (<b>${nextLetter}</b>) idéalement <b>${fmtDay(idealDate)}</b>, possible dès <b>demain</b> (séance différente).</div>`;
-  } else if(gap < TIMING.idealGapDays){
-    // 1 jour après : possible mais pas encore optimal
+    el.innerHTML = `<span class="ti">🛌</span><div>Séance faite aujourd'hui — récupère. Tu peux enchaîner dès <b>demain</b> avec la <b>${nextLetter}</b> (la rotation change de muscles). Garde au moins 1 jour de repos complet par semaine.</div>`;
+  } else if(gap === 1){
     el.className = "timing-reco ideal";
-    el.innerHTML = `<span class="ti">👍</span><div>Tu peux faire la séance <b>${nextLetter}</b> dès aujourd'hui (muscles différents). L'idéal récupération reste <b>${fmtDay(idealDate)}</b>.</div>`;
+    el.innerHTML = `<span class="ti">🔥</span><div>Parfait pour enchaîner avec la séance <b>${nextLetter}</b> — la rotation A/B/C laisse récupérer les muscles d'hier. L'Express est idéal en rythme quotidien.</div>`;
   } else if(gap <= TIMING.lateDays){
-    // fenêtre idéale
     el.className = "timing-reco ideal";
-    el.innerHTML = `<span class="ti">🔥</span><div>C'est le bon moment pour la séance <b>${nextLetter}</b> — tu es dans ta fenêtre idéale.</div>`;
+    el.innerHTML = `<span class="ti">🔥</span><div>C'est le bon moment pour la séance <b>${nextLetter}</b> — tes muscles sont bien récupérés.</div>`;
   } else {
-    // tu traînes
     el.className = "timing-reco late";
     el.innerHTML = `<span class="ti">⏰</span><div>${gap} jours sans séance. Reprends en douceur avec la séance <b>${nextLetter}</b> quand tu peux.</div>`;
   }
@@ -1672,21 +1719,31 @@ function renderWeekStrip(){
   if(isCurrentWeek || isFutureWeek){
     const todayIdx = daysBetween(monday, today); // <0 si semaine future
     let projected = doneCount;
+    // remplissage quotidien des jours libres à partir d'aujourd'hui
+    // (ou demain si la séance du jour est faite), jusqu'à l'objectif,
+    // puis 1 bonus — en garantissant au moins 1 jour de repos dans la semaine.
     let cursor;
     if(isFutureWeek){
-      cursor = 0; // semaine future : projection depuis lundi
+      cursor = 0;
     } else {
-      cursor = todayIdx;
-      if(doneByDay[todayIdx]!=null) cursor = todayIdx + TIMING.idealGapDays;
+      cursor = Math.max(0, todayIdx);
+      if(doneByDay[todayIdx]!=null) cursor = todayIdx + 1;
     }
-    while(cursor < 7 && projected < TIMING.weeklyTarget + 1){
-      if(cursor >= 0 && doneByDay[cursor]==null){
-        recoDays[cursor] = (projected < TIMING.weeklyTarget) ? "reco" : "bonus";
+    while(cursor < 7 && projected <= TIMING.weeklyTarget){
+      if(doneByDay[cursor]==null && recoDays[cursor]==null){
+        const isBonus = (projected >= TIMING.weeklyTarget);
+        if(isBonus){
+          // bonus seulement s'il reste au moins 1 jour libre après (repos garanti)
+          let freeAfter = 0;
+          for(let j=cursor+1;j<7;j++){ if(doneByDay[j]==null) freeAfter++; }
+          if(freeAfter < 1) break;
+          recoDays[cursor] = "bonus";
+        } else {
+          recoDays[cursor] = "reco";
+        }
         projected++;
-        cursor += TIMING.idealGapDays;
-      } else {
-        cursor += 1;
       }
+      cursor += 1;
     }
   }
 
@@ -1753,7 +1810,7 @@ function renderHistory(){
       <div class="hist-badge ${h.session.toLowerCase()}">${h.session}</div>
       <div class="hist-info">
         <div class="hist-name">${P.name} — ${P.subtitle}</div>
-        <div class="hist-date">${dateStr} · ${h.durationMin||"?"} min${h.comment?" · 💬":""}</div>
+        <div class="hist-date">${dateStr} · ${h.durationMin||"?"} min${h.mode==="express"?" · Express":""}${h.comment?" · 💬":""}</div>
       </div>
       <div class="hist-feel">${feelEmoji[h.feel]||""}</div>
     </div>
@@ -1833,7 +1890,7 @@ function buildExport(){
   lines.push("HISTORIQUE DÉTAILLÉ (10 dernières) :");
   [...DB.history].reverse().slice(0,10).forEach(h=>{
     const d = new Date(h.date);
-    lines.push(`  ${d.toLocaleDateString("fr-FR")} — Séance ${h.session} — ${h.durationMin||"?"}min — ressenti: ${h.feel||"?"}`);
+    lines.push(`  ${d.toLocaleDateString("fr-FR")} — Séance ${h.session} (${h.mode==="express"?"express":"complète"}) — ${h.durationMin||"?"}min — ressenti: ${h.feel||"?"}`);
     if(h.exFeedback && h.exFeedback.length){
       h.exFeedback.forEach(f=>{ const ex=exById(f.exId); lines.push(`      • ${ex?ex.name:f.exId} : ${f.signal==="hard"?"TROP DUR":"trop facile"}`); });
     }
@@ -1964,6 +2021,7 @@ function resetAll(){
 
 function init(){
   loadDB();
+  previewMode = rawGet("homegym_v2_mode") || "complete";
   refreshBackupInfo();
   renderDashboard();
   renderHistory();
